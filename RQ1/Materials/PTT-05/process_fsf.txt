@@ -1,0 +1,7 @@
+ticket_profile = valid_ticket
+&&
+status = true and message = Ticket is valid
+||
+ticket_profile = invalid_or_expired_ticket
+&&
+status = false and message = Ticket is invalid or expired

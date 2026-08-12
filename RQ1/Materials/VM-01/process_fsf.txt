@@ -1,0 +1,11 @@
+quantity = 1 and price > 0 and price <= 500
+&&
+item_written = true and appended_quantity = 1 and appended_price = price
+||
+quantity = 2 and price > 0 and price <= 500
+&&
+item_written = true and appended_quantity = 2 and appended_price = price * 2
+||
+quantity = 10 and price > 0 and price <= 500
+&&
+item_written = true and appended_quantity = 10 and appended_price = price * 10

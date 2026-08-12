@@ -1,0 +1,7 @@
+old_course_count inset (2,4,8)
+&&
+student_resolved = true and course_resolved = true and course_present = true and old_course_count = old_course_count and new_course_count = old_course_count - 1 and target_course_removed = true and status = true and message = Course dropped successfully.
+||
+old_course_count = 1
+&&
+student_resolved = true and course_resolved = true and course_present = true and old_course_count = 1 and new_course_count = 1 and target_course_removed = false and status = false and message = Minimum course limit reached.

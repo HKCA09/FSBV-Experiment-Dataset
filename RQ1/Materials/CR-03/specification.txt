@@ -1,0 +1,99 @@
+Module SYSTEM_COURSE_REGISTRATION;
+
+Const
+max_course_limit = 8; /* Maximum number of courses a student can register for */
+min_course_limit = 1; /* Minimum number of courses a student must register for */
+
+type
+StudentID = nat0;
+CourseID = nat0;
+Course = struct(course_id: CourseID, course_name: string, credits: nat0);
+StudentRecord = struct(student_id: StudentID, registered_courses: seq of Course);
+CourseCatalog = map CourseID to Course;
+
+var
+ext #student_records: map StudentID to StudentRecord;
+ext #course_catalog: CourseCatalog;
+
+inv
+forall[student: StudentID] | len(#student_records(student).registered_courses) <= max_course_limit;
+/* Each student must not register for more than the maximum allowed courses */
+
+forall[student: StudentID] | len(#student_records(student).registered_courses) >= min_course_limit;
+/* Each student must register for at least the minimum required courses */
+
+behav CDFD_CM;
+
+process Register_Course(register_control: sign, student_id: StudentID, course_id: CourseID)
+success: bool | message: string
+ext wr student_records
+rd course_catalog
+pre exists!(register_control) and student_id in dom(~student_records) and course_id in dom(course_catalog);
+post
+if len(~student_records(student_id).registered_courses) < max_course_limit then
+    student_records(student_id).registered_courses =
+        conc(~student_records(student_id).registered_courses, [course_catalog(course_id)]);
+    success = true and message = "Course registered successfully."
+else
+    success = false and message = "Course limit exceeded.";
+comment "Registers a course for the given student if limits allow."
+end_process;
+
+process Drop_Course(drop_control: sign, student_id: StudentID, course_id: CourseID)
+success: bool | message: string
+ext wr student_records
+rd course_catalog
+pre exists!(drop_control) and student_id in dom(~student_records) and course_id in dom(course_catalog) and course_catalog(course_id) in ~student_records(student_id).registered_courses;
+post
+if len(~student_records(student_id).registered_courses) > min_course_limit then
+    student_records(student_id).registered_courses =
+        remove(course_catalog(course_id), ~student_records(student_id).registered_courses);
+    success = true and message = "Course dropped successfully."
+else
+    success = false and message = "Minimum course limit reached.";
+comment "Drops the specified course from the student's registered courses."
+end_process;
+
+process View_Catalog(view_control: sign)
+catalog: set of Course
+ext rd course_catalog
+pre exists!(view_control);
+post
+catalog = range(course_catalog);
+comment "Returns the list of all available courses in the catalog."
+end_process;
+
+end_module;
+
+
+Module NOTIFICATION_MANAGEMENT;
+type
+StudentID = nat0;
+Notification = struct(student_id: StudentID, message: string);
+
+var
+ext #notifications: seq of Notification;
+
+behav CDFD_NM;
+
+process Add_Notification(notification_control: sign, student_id: StudentID, message: string)
+ext wr notifications
+pre exists!(notification_control);
+post 
+notifications = append(~notifications, [struct(student_id, message)]);
+comment "Adds a new notification for the given student."
+end_process;
+
+process View_Notifications(view_control: sign, student_id: StudentID)messages: seq of string | info: string
+ext rd notifications
+pre exists!(view_control);
+post 
+if exists!(view_control) 
+then 
+    messages = [n.message and n in ~notifications, n.student_id = student_id]
+else 
+    info = "No notifications available.";
+comment "Retrieves notifications for the given student."
+end_process;
+
+end_module;

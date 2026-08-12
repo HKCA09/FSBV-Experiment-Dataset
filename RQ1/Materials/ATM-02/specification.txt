@@ -1,0 +1,1430 @@
+Module SYSTEM_ATM;
+Const
+maximum_withdraw_once = 1,000,000; /*The unit Is JPY, likewise for the following constants.*/
+maximum_withdraw_day = 5,000,000;
+maximum_deposit_once = 1,000,000;
+maximum_withdraw_application = 3,000,000;
+ATM_no = i; /*i Is any natural number*/
+
+type
+Password = nat0; /*A password Is a natural number */
+Date = string;
+Time = string;
+CustomerInf = struct(account_no: nat0, pass: Password);
+Transaction = struct(withdraw_amount: real, deposit_amount: real, transaction_date: Date, transaction_time: Time, customer: CustomerInf);
+AccountInf = struct(account_no: nat0, pass: Password, balance: real, transaction_history: seq of Transaction);
+CurrentAccountInf = AccountInf;
+SavingsAccountInf = struct(account_no: nat0, pass: Password, balance: real, transaction_history: seq of Transaction, withdraw_application_amount: nat0, application_status: bool);
+ForeignCurrencyAccountInf = struct(account_no: nat0, pass: Password, balance: real);
+ExchangeNotice = struct(amount_in_yen: nat0, current_balance: real, foreign_balance: real);
+CashExchangeNotice = struct(amount_in_yen: nat0, amount_in_dollar: real, foreign_balance: real);
+SetOfPasswords = set of Password;
+CurrentAccountFile = map CustomerInf to CurrentAccountInf;
+SavingsAccountFile = map CustomerInf to SavingsAccountInf;
+ForeignCurrencyAccountFile = map CustomerInf to ForeignCurrencyAccountInf;
+var
+ext #current_accounts: CurrentAccountFile;
+ext #savings_accounts: SavingsAccountFile;
+ext #foreign_currency_accounts: ForeignCurrencyAccountFile;
+ext #today: Date; /*The variable today Is assumed To change To reflect
+the date of today in calender.*/
+ext #current_time: Time; /*This variable represents a clock telling the current time */
+
+inv
+forall[x: CustomerInf] | Not exists[y: CustomerInf] | x.account_no = y.account_no;
+/*Each customer's account is unique */
+forall[x, y: Transaction] | x <> y; /*All the transactions are different. */
+forall[x, y: {current, savings, transfer, foreign_currency, change_pass}] |
+bound(x) And bound(y) = false;
+/*Any two of the reltaed control data flows cannot become available at the same time */
+behav CDFD_No1;
+
+process Manage_Current_Account(current:   sign)
+ext wr current_accounts
+End;
+process Manage_Savings_Account(savings:   sign)
+ext wr savings_accounts
+End;
+process Manage_Transfer(transfer:   sign)
+ext wr current_accountssub
+wr savings_accounts
+    End;
+process Manage_Foreign_Currency_Account(foreign_currency:   sign)
+ext wr foreign_currency_accounts
+End;
+process Change_Password(change_pass:   sign)
+ext wr all_used_passwords
+wr foreign_currency_accounts
+wr savings_accounts
+wr current_accounts
+    End;
+
+end_module;
+
+Module Manage_Current_Account_Decom / SYSTEM_ATM;
+type
+Notice = struct(amount: nat0, balance: real);
+OutputDevice = seq of universal;
+/*universal Is a union type containing any possible types */
+InputDevice = seq of universal;
+ServiceCollection = {<1>, <2>, <3>, <4>};
+var
+ext #current_accounts: CurrentAccountFile;
+ext #output_device: OutputDevice;
+ext #inputDevice: InputDevice;
+inv
+forall[x, y: {deposit, withdraw, s_balance, p_transactions}] |
+bound(x) And bound(y) = false;
+behav CDFD_No2;
+process Select_Services(deposit, a: sign |
+b, withdraw: sign |
+c, s_balance: sign |
+d, p_transactions: sign) sel: ServiceCollection
+post bound(deposit) And sel = <1> Or
+bound(withdraw) And sel = <2> Or
+bound(s_balance) And sel = <3> Or
+bound(p_transactions) And sel = <4>
+explicit
+If bound(deposit)
+then sel := <1>
+ElseIf bound(withdraw)
+then sel := <2>
+ElseIf bound(s_balance)
+then sel := <3>
+ElseIf bound(p_transactions)
+then sel := <4>
+comment
+The output data flow sel Is decided To take different value depending On
+the availability Of the input data flows.
+end_process;
+process Current_Authorization(sel:  ServiceCollection,
+current_inf: CustomerInf)
+current_inf1: CustomerInf |
+current_inf2: CustomerInf |
+current_inf3: CustomerInf |
+current_inf4: CustomerInf |
+e_mesg1: String
+ext rd current_accounts
+post if current_inf inset dom(current_accounts)
+then case sel of
+<1> —> current_inf1 = current_inf;
+<2> —> current_inf2 = current_inf;
+<3> —> current_inf3 = current_inf;
+<4> —> current_inf4 = current_inf;
+End
+    Else e_mesg1 = “Your password or account number is incorrect.”
+explicit
+If current_inf inset dom(current_accounts)
+then case sel of
+<1> —> current_inf1 := current_inf;
+<2> —> current_inf2 := current_inf;
+<3> —> current_inf3 := current_inf;
+<4> —> current_inf4 := current_inf;
+End
+    Else e_mesg1 := “Y our password or account number is incorrect.”
+comment
+If the input account_no And password match those Of the customer's
+current account In the store current_accounts
+then generate output permission
+Else output an Error message.
+end_process;
+
+process Current_Deposit(deposit_amount: nat0, current_inf1: CustomerInf)
+notice1: Notice | warning1: String
+ext wr current_accounts;
+post if deposit_amount <= maximum_deposit_once
+then
+current_accounts =
+override(~current_accounts,
+{current_inf1 ->
+modify(~current_accounts(current_inf1),
+balance ->
+~current_accounts(current_inf1).balance + deposit_amount,
+transaction_history ->
+conc(~current_accounts(current_inf1).transaction_history,
+[Get_Transaction(current_accounts, today, current_time, 0, deposit_amount, current_inf1)]
+)
+)
+}
+) and
+notice1 = mk_Notice(deposit_amount, current_accounts(current_inf1).balance)
+else warning1 = "Your amount is over 1000000 yen limit."
+explicit
+account_inf: CurrentAccountInf;
+transaction: Transaction;
+begin
+account_inf := New CurrentAccountInf;
+transaction := New Transaction;
+if deposit_amount <= maximum_deposit_once
+then
+begin
+account_inf := current_accounts(current_inf1);
+account_inf.Increase_Balance(deposit_amount);
+account_inf.Update_Transaction_History(
+transaction.Get_Transaction(current_accounts, today, current_time,
+0, deposit_amount, current_inf1));
+current_accounts :=
+override(current_accounts,
+{current_inf1 -> account_inf});
+notice1 := New Notice;
+notice1.Make_Notice(deposit_amount,
+current_accounts(current_inf1).balance)
+End
+else warning1 := "Your amount is over 1000000 yen limit."
+End
+comment
+If the input deposit_amount Is less than Or equal To the maximum_deposit_once
+then
+(1) add the deposit_amount to the current_account
+(2) give the customer a notice showing the amount of deposit And the updated balance
+(3) update the transaction history of the account
+Else give a warning message To indicate that the amount Is over the limit.
+end_process;
+
+process Current_Withdraw(current_inf2: CustomerInf, amount: nat0)
+notice2: Notice | warning2: String
+ext wr current_accounts
+post if amount <= maximum_withdraw_once and
+amount <= ~current_accounts(current_inf2).balance
+then
+current_accounts =
+override(~current_accounts,
+{current_inf2 ->
+modify(~current_accounts(current_inf2),
+balance ->
+~current_accounts(current_inf2).balance - amount,
+transaction_history ->
+conc(~current_accounts(current_inf2).transaction_history,
+[Get_Transaction(current_accounts, today, current_time, amount, 0, current_inf2)]
+)
+)
+}
+) and
+notice2 = mk_Notice(amount, current_accounts(current_inf2).balance)
+else warning2 = "Your withdraw amount is over the limit."
+explicit
+account_inf: CurrentAccountInf;
+transaction: Transaction;
+begin
+account_inf := New CurrentAccountInf;
+transaction := New Transaction;
+if amount <= maximum_withdraw_once and
+amount <= current_accounts(current_inf2).balance
+then
+begin
+account_inf := current_accounts(current_inf2);
+account_inf.Decrease_Balance(amount);
+account_inf.Update_Transaction_History(
+transaction.Get_Transaction(current_accounts, today, current_time,
+amount, 0, current_inf2));
+current_accounts :=
+override(current_accounts,
+{current_inf2 -> account_inf});
+notice2 := New Notice;
+notice2.Make_Notice(amount,
+current_accounts(current_inf2).balance)
+End
+else warning2 := "Your amount is over 1000000 yen limit."
+End
+comment
+If the input amount Is less than Or equal To the
+balance of the account And the maximum_withdraw_once
+then
+(1) output the cash of the requested amount
+(2) reduce the amount from the current account
+(3) update the transaction history of the account
+Else give a warning message To indicate that the amount Is over the limit.
+end_process;
+
+process Current_Show_Balacnce(current_inf3:  CustomerInf)
+balance: nat0
+ext rd current_accounts
+post balance = current_accounts(current_inf3).balance
+explicit
+balance := current_accounts(current_inf3).balance
+comment
+display the balance Of the customer's current account
+end_process;
+process Current_Print_Transaction_Records(current_inf4:  CustomerInf, date: Date)
+transaction_records: TransactionRecords
+ext rd current_accounts
+post let transactions = current_accounts(current_inf4).transaction_history
+in let i = get({i | i: inds(transactions) & transactions(i).date = date})
+in
+transaction_records = transactions(i, ..., len(transactions))
+explicit
+transactions: seq of Transaction;
+index: nat0;
+begin
+transactions := current_accounts(current_inf4).transaction_history;
+index := get({i | i: inds(transactions) & transactions(i).date = date});
+transaction_records := transactions(index, ..., len(transactions))
+End
+comment
+print out the transaction records since the input Date
+end_process;
+process Display_Information(notice1:  Notice |
+notice2: Notice |
+balance: nat0 |
+transaction_records: TransactionRecords)
+ext wr output_device
+post bound(notice1) And output_device = conc(~output_device, [notice1]) Or
+bound(notice2) And output_device = conc(~output_device, [notice2]) Or
+bound(balance) And output_device = conc(~output_device, [balance]) Or
+bound(transaction_records) And output_device =
+conc(~output_device, [transactions_records])
+explicit
+If bound(notice1)
+then output_device := conc(~output_device, [notice1])
+ElseIf bound(notice2)
+then output_device = conc(~output_device, [notice2])
+ElseIf bound(balance)
+then output_device = conc(~output_device, [balance])
+Else output_device = conc(~output_device, [transactions_records])
+comment
+Display the input data flows onto the output device based On their
+availability.
+end_process;
+process Display_Message(warning1: String |
+warning2: String |
+e_mesg1: String)
+ext wr output_device
+post bound(warning1) And output_device = conc(~output_device, [warning1]) Or
+bound(warning2) And output_device = conc(~output_device, [warning2]) Or
+bound(e_mesg1) And output_device = conc(~output_device, [e_mesg1])
+explicit
+whil bound(warning1)
+then output_device := conc(~output_device, [warning1])
+ElseIf bound(warning2)
+then output_device := conc(~output_device, [warning2])
+Else output_device := conc(~output_device, [e_mesg1])
+comment
+Display the input data flows onto the output device based On their
+availability.
+end_process;
+end_module;
+
+Module Manage_Savings_Account_Decom / SYSTEM_ATM;
+type
+Notice = Manage_Current_Account_Decom.Notice;
+OutputDevice = Manage_Current_Account_Decom.OutputDevice;
+InputDevice = Manage_Current_Account_Decom.InputDevice;
+SavingsServiceCollection = {<1>, <2>, <3>, <4>, <5>};
+var
+ext #current_accounts: CurrentAccountFile;
+ext #output_device: OutputDevice;
+ext #InputDevice: InputDevice;
+inv
+forall[x, y: {s_deposit, apply, s_withdraw, s_s_balance, s_p_transactions}] |
+bound(x) And bound(y) = false;
+behav CDFD_No3;
+process Select_Savings_Services(s_deposit, a1:  sign |
+b1, apply: sign |
+c1, s_withdraw: sign |
+d1, s_s_balance: sign |
+e1, s_p_transactions: sign)
+sel: SavingsServiceCollection
+post bound(s_deposit) And sel = <1> Or
+bound(apply) And sel = <2> Or
+bound(s_withdraw) And sel = <3> Or
+bound(s_s_balance) And sel = <4> Or
+bound(s_p_transactions) And sel = <5>
+explicit
+
+begin
+If bound(s_deposit)
+then sel := <1>
+ElseIf bound(apply)
+then sel := <2>
+ElseIf bound(s_withdraw)
+then sel := <3>
+ElseIf bound(s_s_balance)
+then sel := <4>
+Else sel := <5>
+End
+comment
+The output data flow sel Is decided To take different value depending On
+the availability Of the input data flows.
+end_process;
+process Savings_Authorization(sel:  SavingsServiceCollection,
+savings_inf: CustomerInf)
+savings_inf1: CustomerInf |
+savings_inf2: CustomerInf |
+savings_inf3: CustomerInf |
+savings_inf4: CustomerInf |
+savings_inf5: CustomerInf |
+e_mesg2: String
+ext rd savings_accounts
+post if savings_inf inset dom(savings_accounts)
+then case sel of
+<1> —> savings_inf1 = savings_inf;
+<2> —> savings_inf2 = savings_inf;
+<3> —> savings_inf3 = savings_inf;
+<4> —> savings_inf4 = savings_inf;
+<5> —> savings_inf5 = savings_inf;
+End
+        Else e_mesg2 = “Your password or account number is incorrect.”
+explicit
+If savings_inf inset dom(savings_accounts)
+then case sel of
+<1> —> savings_inf1 := savings_inf;
+<2> —> savings_inf2 := savings_inf;
+<3> —> savings_inf3 := savings_inf;
+<4> —> savings_inf4 := savings_inf;
+<5> —> savings_inf5 := savings_inf
+end
+else e_mesg2 := “Y our password or account number is incorrect.”
+comment
+if the input account_no and password match those of the customer’s
+savings account in the store savings_accounts
+then generate output data flows based on the value of variable sel
+Else output an Error message.
+end_process;
+process Savings_Deposit(d_amount: nat0, savings_inf1: CustomerInf)
+notice1: Notice | warning3: string
+ext wr savings_accounts;
+post if d_amount <= maximum_deposit_once
+then
+savings_accounts =
+override(~savings_accounts,
+{savings_inf1 —>
+modify(~savings_accounts(savings_inf1),
+balance —>
+~savings_accounts(savings_inf1).balance + d_amount,
+transaction_history —>
+conc(~savings_accounts(savings_inf1).transaction_history,
+[Get_Savings_Transaction(savings_accounts, today, current_time, 0, d_amount,
+savings_inf1)]
+ )
+)
+}
+) and
+notice1 = mk_Notice(d_amount, savings_accounts(savings_inf1).balance))
+else warning3 = “Your amount is over 1000000 yen limit.”
+explicit
+account_inf: savingsAccountInf;
+transaction: Transaction;
+begin
+account_inf := new savingsAccountInf;
+transaction := new Transaction;
+if d_amount <= maximum_deposit_once
+then
+begin
+account_inf := savings_accounts(savings_inf1);
+account_inf.Increase_Balance(d_amount);
+account_inf.Update_Transaction_History(
+transaction.Get_Savings_Transaction(savings_accounts, today, current_time,
+0, d_amount, savings_inf1));
+savings_accounts :=
+override(savings_accounts,
+{savings_inf1 —> account_inf});
+notice1 := new Notice;
+notice1.Make_Notice(d_amount,
+savings_accounts(savings_inf1).balance)
+end
+else warning3 := “Your amount is over 1000000 yen limit.”
+end
+
+comment
+if the input d_amount is less than or equal to the maximum_deposit_once
+then
+(1) add the d_amount to the savings_account
+(2) give the customer a notice showing the amount of deposit and the updated balance
+(3) update the transaction history of the account
+Else give a warning message To indicate that the amount Is over the limit.
+end_process;
+process Apply_Withdraw(savings_inf2: CustomerInf, a_amount: nat0)
+a_notice: string | warning4: string
+ext wr savings_accounts
+post if a_amount <= maximum_withdraw_application
+then
+savings_accounts =
+override(~savings_accounts,
+{savings_inf2 ->
+modify(~savings_accounts(savings_inf2),
+withdraw_application_amount -> a_amount,
+application_status -> true)
+}
+) and
+a_notice = "Your application is successful"
+else warning4 = "Your application amount is over the limit."
+explicit
+account_inf: SavingsAccountInf;
+begin
+account_inf := New SavingsAccountInf;
+if a_amount <= maximum_withdraw_application
+then
+begin
+account_inf := savings_accounts(savings_inf2);
+account_inf.Set_Application_Amount(a_amount);
+savings_accounts :=
+override(~savings_accounts,
+{savings_inf2 -> account_inf});
+a_notice := "Your application is successful"
+end
+else warning4 := "Your application amount is over the limit."
+end
+
+comment
+If the applied withdraw amount a_amount is within the fixed limit,
+then change the withdraw_application_amount to the applied withdraw
+amount and the application_status to true, indicating the application is
+successful. Otherwise generate a warning.
+end_process;
+
+process Savings_Withdraw(savings_inf3: CustomerInf, w_amount: nat0)
+notice2: Notice | warning5: string
+ext wr savings_accounts
+post if w_amount <= ~savings_accounts(savings_inf3).withdraw_application_amount and
+w_amount <= ~savings_accounts(savings_inf3).balance
+then
+savings_accounts =
+override(~savings_accounts,
+{savings_inf3 ->
+modify(~savings_accounts(savings_inf3),
+balance ->
+~savings_accounts(savings_inf3).balance - w_amount,
+transaction_history ->
+conc(~savings_accounts(savings_inf3).transaction_history,
+[Get_Savings_Transaction(savings_accounts, today, current_time, w_amount, 0,
+savings_inf3)]
+)
+)
+}
+) and
+notice2 = mk_Notice(w_amount, savings_accounts(savings_inf3).balance)
+else warning5 = "Your withdraw amount is over the limit."
+explicit
+account_inf: SavingsAccountInf;
+transaction: Transaction;
+begin
+account_inf := New SavingsAccountInf;
+transaction := New Transaction;
+if w_amount <= ~savings_accounts(savings_inf3).withdraw_application_amount and
+w_amount <= savings_accounts(savings_inf3).balance
+then
+begin
+account_inf := savings_accounts(savings_inf3);
+account_inf.Decrease_Balance(w_amount);
+account_inf.Update_Transaction_History(
+transaction.Get_Savings_Transaction(savings_accounts, today, current_time,
+w_amount, 0, savings_inf3));
+savings_accounts :=
+override(savings_accounts,
+{savings_inf3 -> account_inf});
+notice2 := New Notice;
+notice2.Make_Notice(w_amount,
+savings_accounts(savings_inf3).balance)
+End
+
+else warning5 := "Your amount is over 1000000 yen limit."
+End
+
+comment
+If the input w_amount Is less than Or equal To the applied withdraw amount
+And the balance of the savings account
+then
+(1) output the cash of the requested amount
+(2) reduce the withdraw amount from the balance
+(3) update the transaction history of the account
+Else give a warning message To indicate that the requested amount Is
+over the limit.
+end_process;
+
+process Savings_Show_Balacnce(savings_inf4: CustomerInf)
+s_balance: nat0
+ext rd savings_accounts
+post s_balance = savings_accounts(savings_inf4).balance
+explicit
+s_balance := savings_accounts(savings_inf4).balance
+comment
+Display the balance Of the customer's savings account
+end_process;
+process Savings_Print_Transaction_Records(savings_inf5: CustomerInf, Date: Date)
+transaction_records: TransactionRecords
+ext rd savings_accounts
+post let transactions = savings_accounts(savings_inf5).transaction_history
+in let i = get({i | i: inds(transactions) & transactions(i).Date = Date})
+in
+transaction_records = transactions(i, ..., len(transactions))
+explicit
+transactions: seq of Transaction;
+index: nat0;
+begin
+transactions := savings_accounts(savings_inf5).transaction_history;
+index := get({i | i: inds(transactions) & transactions(i).Date = Date});
+transaction_records := transactions(index, ..., len(transactions))
+End
+comment
+Print out the transaction records since the input Date
+end_process;
+process Savings_Display_Information(notice1: Notice |
+a_notice: String |
+notice2: Notice |
+s_balance: nat0 |
+transaction_records: TransactionRecords)
+ext wr output_device
+post bound(notice1) And output_device = conc(~output_device, [notice1]) Or
+bound(a_notice) And output_device = conc(~output_device, [a_notice]) Or
+bound(notice2) And output_device = conc(~output_device, [notice2]) Or
+bound(s_balance) And output_device = conc(~output_device, [s_balance]) Or
+bound(transaction_records) And output_device =
+conc(~output_device, [transactions_records])
+explicit
+If bound(notice1)
+then output_device := conc(~output_device, [notice1])
+ElseIf bound(a_notice)
+then output_device := conc(~output_device, [a_notice])
+ElseIf bound(notice2)
+then output_device := conc(~output_device, [notice2])
+ElseIf bound(s_balance)
+then output_device := conc(~output_device, [s_balance])
+Else output_device := conc(~output_device, [transactions_records])
+comment
+Display the input data flows onto the output device based On their
+availability.
+end_process;
+process Savings_Display_Message(warning3: String |
+warning4: String |
+warning5: String |
+e_mesg2: String)
+ext wr output_device
+post bound(warning3) And output_device = conc(~output_device, [warning3]) Or
+bound(warning4) And output_device = conc(~output_device, [warning4]) Or
+bound(warning5) And output_device = conc(~output_device, [warning5]) Or
+bound(e_mesg2) And output_device = conc(~output_device, [e_mesg2])
+explicit
+If bound(warning3)
+then output_device := conc(~output_device, [warning3])
+ElseIf bound(warning4)
+then output_device := conc(~output_device, [warning4])
+ElseIf bound(warning5)
+then output_device := conc(~output_device, [warning5])
+Else output_device := conc(~output_device, [e_mesg2])
+comment
+Display the input data flows onto the output device based On their 
+        availability.
+end_process;
+end_module;
+
+Module Manage_Transfer_Decom / SYSTEM_ATM;
+var
+ext #savings_accounts;
+ext #savings_accounts;
+process Select_Transfer_Services(current_to_savings, a2:  sign |
+b2, savings_to_current: sign)
+sel1: bool
+post bound(current_to_savings) And sel1 = True Or
+bound(savings_to_current) And sel1 = false
+explicit
+If bound(current_to_savings)
+then sel1 := true
+Else sel1 := False
+
+comment
+sel1 Is decided based on the availability of the input data flows.
+end_process;
+process Transfer_Authorization(sel1:  bool,
+customer_inf: CustomerInf)
+customer_inf1: CustomerInf |
+customer_inf2: CustomerInf |
+w_mesg: String
+ext rd savings_accounts
+rd current_accounts
+post if sel1
+then if customer_inf inset dom(current_accounts)
+then customer_inf1 = customer_inf
+Else w_mesg = “The password or account number of
+your current account is incorrect.”
+ElseIf customer_inf inset dom(savings_accounts)
+then customer_inf2 = customer_inf
+Else w_mesg = “The password or account number of
+your savings account is incorrect.”
+explicit
+If sel1
+then if customer_inf inset dom(current_accounts)
+then customer_inf1 := customer_inf
+Else w_mesg := “The password or account number of
+your current account is incorrect.”
+ElseIf customer_inf inset dom(savings_accounts)
+then customer_inf2 := customer_inf
+Else w_mesg := “The password or account number of
+your savings account is incorrect.”
+comment
+Check whether the customer's account number and password
+are confirmed. If yes, pass the input customer_inf To either
+customer_inf1 Or customer_inf2, depending on from which
+of the current And savings accounts the transfer will be done.
+end_process;
+
+process Transfer_From_Current_To_Savings(savings_account_no:  nat0,
+transfer_amount1: nat0,
+current_inf: CurrentInf)
+notice1: TransferNotice | warning6: String
+ext wr current_accounts
+wr savings_accounts
+post if transfer_amount1 <= current_accounts(current_inf).balance
+then
+current_accounts = override(~current_accounts,
+{current_inf —>
+modify(~current_accounts(current_inf),
+balance —>
+~current_accounts(current_inf).balance - transfer_amount1
+)
+}
+ ) And
+(exists![x: dom(savings_accounts)] |
+x.account_no = savings_account_no And
+savings_accounts =
+override(~savings_accounts,
+{x —>
+modify(~savings_accounts(x),
+balance —>
+~savings_accounts(x).balance + transfer_amount1)}
+) And
+notice1 =
+mk_TransferNotice(transfer_amount1,
+current_accounts(current_inf).balance,
+savings_accounts(x).balance
+)
+Else warning6 = “Your transfer amount is over the balance.”
+explicit
+
+begin
+account_inf: CurrentAccountInf;
+s_account_inf: SavingsAccountInf;
+savings_inf: CustomerInf;
+account_inf = New CurrentAccountInf;
+s_account_inf := New SavingsAccountInf;
+savings_inf := New CustomerInf;
+If transfer_amount1 <= current_accounts(current_inf).balance
+then
+
+begin
+account_inf :=
+modify(current_accounts(current_inf),
+balance —>
+current_accounts(current_inf).balance - transfer_amount1);
+current_accounts :=
+override(current_accounts,
+{current_inf —> account_inf});
+savings_inf := get{x | x: dom(savings_accounts) &
+x.account_no = savings_account_no};
+s_account_inf :=
+modify(savings_accounts(savings_inf),
+balance —>
+savings_accounts(savings_inf).balance + transfer_amount1);
+savings_accounts :=
+override(savings_accounts,
+savings_inf —> s_account_inf});
+notice1 := New TransferNotice;
+notice1.Make_TransferNotice(transfer_amount1,
+current_accounts(current_inf).balance,
+savings_accounts(x).balance);
+End
+    Else warning6 := “Y our transfer amount is over the balance.”
+End
+comment
+If transfer_account Is greater than the balance Of the current account
+then give a warning message
+Else
+ (1) add the requested amount to the savings account
+(2) reduce the requested amount from the balance of the current account
+(3) give a notice to show the detail of the transfer
+end_process;
+process Transfer_From_Savings_To_Current(savings_inf:  CustomerInf,
+current_account_no: nat0,
+transfer_amount2: nat0)
+notice2: TransferNotice |
+warning7: String
+ext wr current_accounts
+wr savings_accounts
+post let savings_account_inf = ~savings_accounts(savings_inf)
+in if savings_account_inf.application_status And
+savings_account_inf.withdraw_application_amount >=
+transfer_amount2
+then
+savings_accounts =
+override(~savings_accounts,
+{savings_inf —>
+modify(savings_account_inf,
+balance —>
+savings_account_inf.balance -
+transfer_amount2,
+withdraw_application_amount —>
+savings_account_inf.withdraw_application_amount -
+transfer_amount2
+)
+}
+) And
+(exists![x: dom(current_accounts)] |
+x.account_no = current_account_no And
+current_accounts =
+override(~current_accounts,
+{x —> modify(~current_accounts(x).balance + transfer_amount2)}
+) And
+notice2 =
+mk_TransferNotice(transfer_amount2,
+savings_accounts(savings_inf).balance,
+current_accounts(x).balance
+)
+Else warning7 = “Your transfer amount is over the applied transfer amount.”
+explicit
+account_inf: CurrentAccountInf;
+savings_account_inf: SavingsAccountInf;
+current_inf: CustomerInf;
+account_inf = New CurrentAccountInf;
+current_inf := New CurrentInf;
+savings_account_inf := New SavingsAccountInf;
+savings_account_inf := savings_accounts(savings_inf);
+s_account_inf := New SavingsAccountInf;
+savings_inf := New CustomerInf;
+If savings_account_inf.application_status And
+savings_account_inf.withdraw_application_amount >=
+transfer_amount2
+then
+
+begin
+savings_account_inf :=
+modify(savings_account_inf,
+balance —>
+savings_account_inf.balance -
+transfer_amount2,
+withdraw_application_amount —>
+savings_account_inf.withdraw_application_amount -
+transfer_amount2);
+savings_accounts =
+override(savings_accounts,
+{savings_inf —> savings_account_inf};
+current_inf := get{x | x: dom(current_accounts) &
+x.account_no = current_account_no};
+account_inf :=
+modify(current_accounts(current_inf),
+balance —>
+current_accounts(current_inf).balance + transfer_amount2);
+current_accounts :=
+override(current_accounts,
+current_inf —> account_inf});
+notice2.Make_TransferNotice(transfer_amount2,
+savings_accounts(savings_inf).balance,
+current_accounts(current_inf).balance
+);
+End
+
+    Else warning7 := “Y our transfer amount is over the applied transfer amount.”
+comment
+If (1) the customer has made an application Of withdraw from
+the savings account
+(2) the transfer amount Is less than Or equal to the applied amount
+then
+(1) add the transfer amount to the balance of the current account
+(2) reduce the same amount from the balance of the savings account
+(3) reduce the amount from the applied amount, And if it becomes zero,
+then set the application status as false; otherwise do nothing about
+the status
+    Else
+ give a warning message
+end_process;
+process Transfer_Display_Information(notice1:  TransferNotice |
+notice2: TransferNotice)
+ext wr output_device
+post bound(notice1) And output_device = conc(~output_device, [notice1]) Or
+bound(notice2) And output_device = conc(~output_device, [notice2])
+explicit
+If bound(notice1)
+then output_device := conc(~output_device, [notice1])
+Else output_device := conc(~output_device, [notice2])
+comment
+Display the input data flows onto the output device based On their
+availability.
+end_process;
+
+process Transfer_Display_Message(w_mesg: String |
+warning6: String |
+warning7: String)
+ext wr output_device
+post bound(w_mesg) And output_device = conc(~output_device, [w_mesg]) Or
+bound(warning6) And output_device = conc(~output_device, [warning6]) Or
+bound(warning7) And output_device = conc(~output_device, [warning7])
+explicit
+If bound(w_mesg)
+then output_device := conc(~output_device, [w_mesg])
+ElseIf bound(warning6)
+then output_device := conc(~output_device, [warning6])
+Else output_device := conc(~output_device, [warning7])
+comment
+Display the input data flows onto the output device based On their
+availability.
+end_process;
+end_module;
+
+Module Manage_Foreign_Currency_Account / SYSTEM_ATM;
+type
+ForeignCurrencyAccounts = ForeignCurrencyAccountFile;
+ForeignServiceCollection = {<1>, <2>, <3>, <4>};
+var
+ext #foreign_currency_accounts: ForeignCurrencyAccounts;
+process Select_Foreign_Services(buying_yen, x1:  sign |
+x2, buying_dollar: sign |
+x3, f_withdraw: sign |
+x4, s_balance: sign)
+f_sel: ForeignServiceCollection
+post bound(buying_yen) And f_sel = <1> Or
+bound(buying_dollar) And f_sel = <2> Or
+bound(f_withdraw) And f_sel = <3> Or
+bound(s_balance) And f_sel = <4>
+explicit
+If bound(buying_yen)
+then f_sel := <1>
+ElseIf bound(buying_dollar)
+then f_sel := <2>
+ElseIf bound(f_withdraw)
+then f_sel := <3>
+Else f_sel := <4>
+comment
+The output data flow f_sel Is decided To take different value depending On
+the availability Of the input data flows.
+end_process;
+process Foreign_Authorization(f_sel:  SavingsServiceCollection,
+foreign_inf: CustomerInf)
+foreign_inf0: CustomerInf |
+foreign_inf1: CustomerInf |
+foreign_inf2: CustomerInf |
+foreign_inf3: CustomerInf |
+foreign_inf4: CustomerInf |
+f_mesg: String
+ext rd foreign_currency_accounts
+post if foreign_inf inset dom(foreign_currency_accounts)
+then case f_sel of
+<1> —> foreign_inf0 = foreign_inf;
+<2> —> foreign_inf1 = foreign_inf;
+<3> —> foreign_inf2 = foreign_inf;
+<4> —> foreign_inf3 = foreign_inf;
+<5> —> foreign_inf4 = foreign_inf
+End
+    Else f_mesg = “Y our password or account number is incorrect.”
+explicit
+If foreign_inf inset dom(foreign_currency_accounts)
+then case f_sel of
+<1> —> foreign_inf0 := foreign_inf;
+<2> —> foreign_inf1 := foreign_inf;
+<3> —> foreign_inf2 := foreign_inf;
+<4> —> foreign_inf3 := foreign_inf;
+<5> —> foreign_inf4 := foreign_inf
+End
+    Else f_mesg := “Y our password or account number is incorrect.”
+comment
+If the input account_no And password match those Of the customer's
+foreign currency account In the store foreign_currency_accounts
+then generate output data flows based on the value of variable f_sel
+Else output an Error message.
+end_process;
+process Buy_Dollars_From_Current(current_inf:  CustomerInf,
+foreign_inf0: CustomerInf,
+amount_in_yen: nat0)
+notice0: ExchangeNotice | warning8: String
+ext wr current_accounts
+wr foreign_currency_accounts
+wr current_exchange_rate
+post if amount_in_yen <= current_accounts(current_inf).balance
+then let amount_in_dollar = amount_in_yen / current_exchange_rate
+in current_accounts =
+override(~current_accounts,
+{current_inf —>
+modify(~current_accounts(current_inf),
+balance —>
+~current_accounts(current_inf).balance - amount_in_yen
+)
+}
+ ) And
+foreign_currency_accounts =
+override(~foreign_currency_accounts,
+{foreign_inf0 —>
+modify(~foreign_currency_accounts(foreign_inf0),
+balance —>
+~foreign_currency_accounts(foreign_inf0).balance + amount_in_dollar
+)
+}
+) And
+notice0 = mk_ExchangeNotice(amount_in_yen, current_accounts(current_inf).balance,
+foreign_currency_accounts(foreign_inf0).balance)
+Else warning8 = “The requested amount is over the balance of your current account.”
+explicit
+amount_in_dollar: real;
+current_account_inf: CurrentAccountInf;
+foreign_currency_account_inf: ForeignCurrencyAccountInf;
+amount_in_dollar := amount_in_yen / current_exchange_rate;
+current_account_inf := New CurrentAccountInf;
+foreign_currency_account_inf := New ForeignCurrencyAccountInf;
+If amount_in_yen <= current_accounts(current_inf).balance
+then
+
+begin
+current_account_inf :=
+modify(current_accounts(current_inf),
+balance —>
+current_accounts(current_inf).balance -
+amount_in_yen);
+current_accounts :=
+override(current_accounts,
+{current_inf —> current_account_inf});
+foreign_currency_account_inf :=
+modify(foreign_currency_accounts(foreign_inf0),
+balance —>
+foreign_currency_accounts(foreign_inf0).balance +
+amount_in_dollar
+foreign_currency_accounts :=
+override(~foreign_currency_accounts,
+{foreign_inf0 —> foreign_currency_account_inf});
+notice0.Make_ExchangeNotice(
+amount_in_yen,
+current_accounts(current_inf).balance,
+foreign_currency_accounts(foreign_inf0).balance)
+End
+
+    Else warning8 := “The requested amount is over the balance of
+your current account.”
+
+comment
+If the amount_in_yen Is less than Or equal To the balance Of the current account
+then
+(1) calculate the transfer amount in US dollar based on the current exchange rate
+(2) reduce the amount transfered to the foreign currency account from the current account
+(3) add the transfered amount in US dollar to the foreign currency account
+(4) produce the notice to indicate the amount in yen, New balance of the current account,
+amount in dollar, And the New balance of foreign currency account
+Else give a warning message To indicate that the requested transfer amount Is over the balance Of
+the requested transfer amount Is over the balance Of the current account.
+end_process;
+
+process Buy_Yen_From_Foreign(current_account_no: nat0,
+foreign_inf1: CustomerInf,
+amount_in_dollar: real)
+notice1: ExchangeNotice | warning9: String
+ext wr current_accounts
+wr foreign_currency_accounts
+rd current_exchange_rate
+post if amount_in_dollar <= ~foreign_currency_accounts(foreign_inf1).balance
+then let amount_in_yen = floor(amount_in_dollar / current_exchange_rate)
+in foreign_currency_accounts =
+override(~foreign_currency_accounts,
+{foreign_inf1 —>
+modify(~foreign_currency_accounts(foreign_inf1),
+balance —>
+~foreign_currency_accounts(foreign_inf1).balance - amount_in_dollar
+)
+}
+ ) And
+(exists![x: dom(current_accounts)] |
+x.account_no = current_account_no And
+current_accounts =
+override(~current_accounts,
+{x —>
+modify(~current_accounts(x),
+balance —>
+~current_accounts(x).balance + amount_in_yen
+)
+}
+ )
+) And
+notice1 =
+mk_ExchangeNotice(amount_in_yen,
+current_accounts(x).balance,
+foreign_currency_accounts(foreign_inf1).balance)
+Else warning9 = “The requested amount is over the balance of your foreign currency account.”
+explicit
+amount_in_yen: nat0;
+foreign_currency_account_inf: ForeignCurrencyAccountInf;
+current_inf: CurrentAccountInf;
+current_account_inf: CurrentAccountInf;
+amount_in_yen := floor(amount_in_dollar / current_exchange_rate);
+foreign_currency_account_inf := New ForeignCurrencyAccountInf;
+current_inf := New CurrentAccountInf;
+current_account_inf := New CurrentAccountInf;
+If amount_in_dollar <= foreign_currency_accounts(foreign_inf1).balance
+then
+
+begin
+foreign_currency_account_inf :=
+modify(foreign_currency_accounts(foreign_inf1),
+balance —>
+foreign_currency_accounts(foreign_inf1).balance -
+amount_in_dollar);
+foreign_currency_accounts :=
+override(~foreign_currency_accounts,
+{foreign_inf1 —> foreign_currency_account_inf});
+current_inf := get({x | x: dom(current_accounts) &
+x.account_no = current_account_no});
+current_account_inf :=
+modify(current_accounts(x),
+balance —>
+current_accounts(x).balance + amount_in_yen);
+current_accounts :=
+override(~current_accounts,
+{current_inf —> current_account_inf});
+notice1 := New ExchangeNotice;
+notice1.Make_ExchangeNotice(
+amount_in_yen,
+current_accounts(current_inf).balance,
+foreign_currency_accounts(foreign_inf1).balance)
+End
+    Else warning9 := “The requested amount is over the balance
+of your foreign currency account.”
+
+comment
+If the amount In dollar Is less than Or equal To the balance Of the foreign
+currency account
+then
+(1) calculate the transfered amount in yen based on the current exchange rate
+(2) add the amount in yen to the current account
+(3) reduce the requested transfer amount in US dollar from the foreign currency account
+(4) give a notice to show all the related data
+Else give a warning message To indicate that the requested transfer amount Is
+over the balance Of the foreign currency account.
+end_process;
+process Buy_Dollars_Using_CashYen(amount_in_yen:  nat0, foreign_inf2: CustomerInf)
+notice2: CashExchangeNotice
+ext wr foreign_currency_accounts
+rd current_exchange_rate
+post let amount_in_dollar = amount_in_yen / current_exchange_rate
+in foreign_currency_accounts =
+override(~foreign_currency_accounts,
+{foreign_inf2 —>
+modify(~foreign_currency_accounts(foreign_inf2),
+balance —>
+~foreign_currency_accounts(foreign_inf2).balance + amount_in_dollar
+)
+}
+ ) And
+notice2 =
+mk_CashExchangeNotice(amount_in_yen,
+amount_in_dollar,
+foreign_currency_accounts(foreign_inf2).balance)
+explicit
+amount_in_dollar: real;
+foreign_currency_account_inf: ForeignCurrencyAccountInf;
+begin
+amount_in_dollar := amount_in_yen / current_exchange_rate;
+foreign_currency_account_inf :=
+modify(foreign_currency_accounts(foreign_inf2),
+balance —>
+foreign_currency_accounts(foreign_inf2).balance +
+amount_in_dollar);
+foreign_currency_accounts :=
+override(foreign_currency_accounts,
+{foreign_inf2 —> foreign_currency_accounts});
+notice2.Make_CashExchangeNotice(
+amount_in_yen,
+amount_in_dollar,
+foreign_currency_accounts(foreign_inf2).balance)
+End
+comment
+(1) calculate the amount in US dollar based on the amount_in_yen
+And the current exchange rate
+(2) add the amount in dollar to the foreign currency account
+(3) give a notice to indicate the relevant data
+end_process;
+process Foreign_Withdraw(foreign_inf3:  CustomerInf, amount_in_yen: nat0)
+notice3: CashExchangeNotice | warning10: String
+ext rd current_exchange_rate
+wr foreign_currency_accounts
+post let amount_in_dollar = amount_in_yen / current_exchange_rate
+in
+If amount_in_dollar <= ~foreign_currency_accounts(foreign_inf3).balance
+then
+foreign_currency_accounts =
+override(~foreign_currency_accounts,
+{foreign_inf3 —>
+modify(~foreign_currency_accounts(foreign_inf3),
+balance —>
+~foreign_currency_accounts(foreign_inf3).balance - amount_in_dollar
+)
+}
+ ) And
+notice3 =
+mk_CashExchangeNotice(amount_in_yen,
+amount_in_dollar,
+foreign_currency_accounts(foreign_inf3).balance)
+Else warning10 = “The requested amount is bigger than
+the balance of your foreign currency
+account.”
+explicit
+amount_in_dollar: real;
+foreign_currency_account_inf: ForeignCurrencyAccountInf;
+begin
+amount_in_dollar := amount_in_yen / current_exchange_rate;
+foreign_currency_account_inf := New ForeignCurrencyAccountInf;
+If amount_in_dollar <= foreign_currency_accounts(foreign_inf3).balance
+then
+begin
+foreign_currency_account_inf :=
+modify(foreign_currency_accounts(foreign_inf3),
+balance —>
+foreign_currency_accounts(foreign_inf3).balance -
+amount_in_dollar);
+foreign_currency_accounts :=
+override(~foreign_currency_accounts,
+{foreign_inf3 —> foreign_currency_account_inf});
+notice3.Make_CashExchangeNotice(
+amount_in_yen,
+amount_in_dollar,
+foreign_currency_accounts(foreign_inf3).balance);
+End
+    Else warning10 := “The requested amount is bigger than
+the balance of your foreign currency
+account.”
+
+End
+comment
+If the amount_in_yen Is less than Or equal To the balance In yen, resulting
+from converting the balance In dollar based On the current exchange rate
+then
+(1) calculate the amount in dollar based on the requested amount in yen
+And the current exchange rate
+(2) provide a notice to show the related details
+(3) reduce the amount in dollar from the balance of the foreign
+currency account
+    Else give a warning message To indicate that the requested amount
+Is over the balance of the foreign currency account
+end_process;
+process Foreign_Show_Balance(foreign_inf4:  CustomerInf)
+balance: real
+ext rd foreign_currency_accounts
+post balance = foreign_currency_account(foreign_inf4).balance
+explicit
+balance := foreign_currency_account(foreign_inf4).balance
+comment
+Provide the balance Of the foreign currency account
+end_process;
+process Foreign_Display_Information(notice0:  ExchangeNotice |
+notice1: ExchangeNotice |
+notice2: CashExchangeNotice |
+notice3: CashExchangeNotice |
+balance: nat0)
+ext wr output_device
+post bound(notice0) And output_device = conc(~output_device, [notice0]) Or
+bound(notice1) And output_device = conc(~output_device, [notice1]) Or
+bound(notice2) And output_device = conc(~output_device, [notice2]) Or
+bound(notice3) And output_device = conc(~output_device, [notice3]) Or
+bound(balance) And output_device = conc(~output_device, [balance]) Or
+explicit
+If bound(notice0)
+then output_device := conc(~output_device, [notice0])
+ElseIf bound(notice1)
+then output_device := conc(~output_device, [notice1])
+ElseIf bound(notice2)
+then output_device := conc(~output_device, [notice2])
+ElseIf bound(notice3)
+then output_device := conc(~output_device, [notice3])
+Else output_device := conc(~output_device, [balance])
+comment
+Display the input data flows onto the output device based On their
+availability.
+end_process;
+process Foreign_Display_Message(warning8: String |
+warning9: String |
+warning10: String)
+ext wr output_device
+post bound(warning8) And output_device = conc(~output_device, [warning8]) Or
+bound(warning9) And output_device = conc(~output_device, [warning9]) Or
+bound(warning10) And output_device = conc(~output_device, [warning10])
+explicit
+If bound(warning8)
+then output_device := conc(~output_device, [warning8])
+ElseIf bound(warning9)
+then output_device := conc(~output_device, [warning9])
+Else output_device := conc(~output_device, [warning10])
+comment
+Display the input data flows onto the output device based On their
+availability.
+end_process;
+end_module;
+
+Module Change_Password_Decom / SYSTEM_ATM;
+var
+ext #current_accounts
+ext #savings_accounts
+ext #foreign_currency_accounts
+ext #all_used_passwords: SetOfPasswords
+process Select_Password_Services(change_current, y1:  sign |
+change_savings, y2: sign |
+y3, change_foreign: sign)
+p_sel: {<1>, <2>, <3>}
+post bound(change_current) And p_sel = <1> Or
+bound(change_savings) And p_sel = <2> Or
+bound(change_foreign) And p_sel = <3>
+explicit
+If bound(change_current)
+then p_sel := <1>
+ElseIf bound(change_savings)
+then p_sel := <2>
+Else p_sel := <3>
+comment
+Assign different values To p_sel depending On the availability Of
+the input data flows.
+end_process;
+
+process Decide_Account(p_sel:  {<1>, <2>, <3>})
+q1: sign | q2: sign | q3: sign
+post p_sel = <1> and bound(q1) or
+p_sel = <2> and bound(q2) or
+p_sel = <3> and bound(q3)
+explicit
+if p_sel = <1>
+then q1 := ! /*make bound(q1) be true */
+else if p_sel = <2>
+then q2 := !
+else q3 := !
+comment
+Generate q1, q2, or q3 depending on the value of the input data flow
+p_sel.
+end_process;
+process Change_Current_Password(current_inf: CustomerInf,
+new_pass1: Password,
+q1: sign)
+s_notice1: string |
+warning11: string
+ext wr current_accounts
+post if current_inf inset dom(current_accounts)
+then
+current_accounts =
+override(domrb({current_inf}, ~current_accounts),
+{modify(current_inf, pass -> new_pass1) ->
+~current_accounts(current_inf)
+}) and
+s_notice1 = "successful"
+else warning11 = "Your old password or account number is incorrect."
+explicit
+current_account_inf: CurrentAccountInf;
+begin
+current_account_inf := New CurrentAccountInf;
+if current_inf inset dom(current_accounts)
+then
+
+begin
+current_account_inf := current_accounts(current_inf);
+current_accounts := domrb({current_inf}, current_accounts);
+current_inf := modify(current_inf, pass -> new_pass1);
+current_accounts :=
+override(current_accounts,
+{current_inf -> current_account_inf});
+s_notice1 := "successful"
+End
+else warning11 := "Your old password or account number is incorrect."
+End
+comment
+If the customer has a current account, Then his old password will be changed
+to the New one And a notice Is issued to indiate the success of the change.
+Otherwise, a warning message will be generated.
+end_process;
+
+process Change_Savings_Password(q2: sign, savings_inf: CustomerInf,
+new_pass2: Password)
+s_notice2: String |
+warning12: String
+ext wr savings_accounts
+post If savings_inf inset dom(savings_accounts)
+then
+savings_accounts =
+override(domrb({savings_inf}, ~savings_accounts),
+{modify(savings_inf, pass —> new_pass2) —>
+~savings_accounts(savings_inf)
+} ) And
+s_notice2 = “successful”
+Else warning12 = “Your old password or account number is incorrect.”
+explicit
+savings_account_inf: SavingsAccountInf;
+begin
+savings_account_inf := New SavingsAccountInf;
+If savings_inf inset dom(savings_accounts)
+then
+begin
+savings_account_inf := savings_accounts(savings_inf);
+savings_accounts := domrb({savings_inf}, savings_accounts);
+savings_inf := modify(savings_inf, pass —> new_pass2);
+savings_accounts :=
+override(savings_accounts,
+{savings_inf —> savings_account_inf});
+s_notice2 := “successful”
+End
+Else warning12 := “Your old password or account number is incorrect.”
+End
+comment
+If the customer has a savings account, Then his old password will be changed
+to the New one And a notice Is issued to indiate the success of the change.
+Otherwise, a warning message will be generated.
+end_process;
+
+process Change_Foreign_Password(q3: sign, foreign_inf: CustomerInf,
+new_pass3: Password)
+s_notice3: String |
+warning13: String
+ext wr foreign_currency_accounts
+post if foreign_inf inset dom(foreign_currency_accounts)
+then
+foreign_currency_accounts =
+override(domrb({foreign_inf}, ~foreign_currency_accounts),
+{modify(foreign_inf, pass -> new_pass3) ->
+~foreign_currency_accounts(foreign_inf)
+}) and
+s_notice3 = "successful"
+else warning13 = "Your old password or account number is incorrect."
+explicit
+foreign_currency_account_inf: ForeignCurrencyAccountInf;
+begin
+foreign_currency_account_inf := New ForeignCurrencyAccountInf;
+if foreign_inf inset dom(foreign_currency_accounts)
+then
+begin
+foreign_currency_account_inf := foreign_currency_accounts(foreign_inf);
+foreign_currency_accounts := domrb({foreign_inf}, foreign_currency_accounts);
+foreign_inf := modify(foreign_inf, pass -> new_pass3);
+foreign_currency_accounts :=
+override(foreign_currency_accounts,
+{foreign_inf -> foreign_currency_account_inf});
+s_notice3 := "successful"
+End
+else warning13 := "Your old password or account number is incorrect."
+End
+
+comment
+If the customer has a foreign currency account, Then his old password will be changed
+to the New one And a notice Is issued to indiate the success of the change.
+Otherwise, a warning message will be generated.
+end_process;
+
+process Display_Success_Message(s_notice1: String |
+s_notice2: String |
+s_notice3: String)
+ext wr output_device
+post bound(s_notice1) And output_device = conc(~output_device, [s_notice1]) Or
+bound(s_notice2) And output_device = conc(~output_device, [s_notice2]) Or
+bound(s_notice3) And output_device = conc(~output_device, [s_notice3])
+explicit
+If bound(s_notice1)
+then output_device := conc(~output_device, [s_notice1])
+ElseIf bound(s_notice2)
+then output_device := conc(~output_device, [s_notice2])
+Else output_device := conc(~output_device, [s_notice3])
+comment
+Display the input data flows onto the output device based On their
+availability.
+end_process;
+process Display_Warning_Message(warning11: String |
+warning12: String |
+warning13: String)
+ext wr output_device
+post bound(warning11) And output_device = conc(~output_device, [warning11]) Or
+bound(warning12) And output_device = conc(~output_device, [warning12]) Or
+bound(warning13) And output_device = conc(~output_device, [warning13])
+explicit
+If bound(warning11)
+then output_device := conc(~output_device, [warning11])
+ElseIf bound(warning12)
+then output_device := conc(~output_device, [warning12])
+Else output_device := conc(~output_device, [warning13])
+comment
+Display the input warning messages onto the output device based On their
+availability.
+end_process;
+end_module;

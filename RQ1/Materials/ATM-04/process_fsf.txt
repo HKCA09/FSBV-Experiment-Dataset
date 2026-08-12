@@ -1,0 +1,7 @@
+amount_in_yen >= 0 and amount_in_yen <= 10000 and current_exchange_rate > 0 and old_foreign_balance >= 0
+&&
+exchange_completed = true and current_balance_delta = 0 - amount_in_yen and foreign_balance_delta = amount_in_yen / current_exchange_rate and new_current_balance = 10000 - amount_in_yen and notice_emitted = true and warning8 = none
+||
+amount_in_yen > 10000 and current_exchange_rate > 0 and old_foreign_balance >= 0
+&&
+exchange_completed = false and current_balance_delta = 0 and foreign_balance_delta = 0 and new_current_balance = 10000 and new_foreign_balance = old_foreign_balance and notice_emitted = false and warning8 = The requested amount is over the balance of your current account.

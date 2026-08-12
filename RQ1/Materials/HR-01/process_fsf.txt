@@ -1,0 +1,7 @@
+patient_info = Alice_Profile 
+&&
+patient_inserted = true and generated_patient_id_fresh = true and patient_id = 2001
+||
+patient_info =Bob_Profile
+&&
+patient_inserted = true and generated_patient_id_fresh = true and patient_id = 2002

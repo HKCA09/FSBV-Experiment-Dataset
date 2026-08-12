@@ -1,0 +1,16 @@
+patient_id = 1001 and doctor_id = 2001 and department_id = 1001 and time_slot >1 and time_slot <10
+&&
+registration_created = true and registration_appended = true and registration_patient_id = patient_id and registration_doctor_id = doctor_id and registration_department_id = 1001 and registration_time_slot = time_slot
+||
+patient_id = 1002 and doctor_id = 2001 and department_id = 2001 and time_slot >10 and time_slot <20
+&&
+registration_created = true and registration_appended = true and registration_patient_id = patient_id and registration_doctor_id = doctor_id and registration_department_id = 2001 and registration_time_slot = time_slot
+||
+patient_id = 1003 and doctor_id = 2001 and department_id = 3001 and time_slot >20 and time_slot <30
+&&
+registration_created = true and registration_appended = true and registration_patient_id = patient_id and registration_doctor_id = doctor_id and registration_department_id = 3001 and registration_time_slot = time_slot
+||
+patient_id = 1004 and doctor_id = 2001 and department_id = 4001 and time_slot >30
+&&
+registration_created = true and registration_appended = true and registration_patient_id = patient_id and registration_doctor_id = doctor_id and registration_department_id = 4001 and registration_time_slot = time_slot
+

@@ -1,0 +1,9 @@
+stock = 1 && price = 137.42
+||
+stock = 2 && price = 284.77
+||
+stock = 3 && price = 91.63
+||
+stock = 4 && price = 412.18
+||
+stock = 5 && price = 58.94

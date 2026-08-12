@@ -1,0 +1,7 @@
+account_profile = existing_account
+&&
+password_changed = true and s_notice1 = successful and warning11 = none
+||
+account_profile = missing_account
+&&
+password_changed = false and s_notice1 = none and warning11 = Your old password or account number is incorrect.

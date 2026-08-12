@@ -1,0 +1,115 @@
+Module SYSTEM_HOSPITAL_REGISTRATION;
+
+Const
+max_patients_per_doctor = 30; /* 每位医生每天最多挂号的患者数 */
+max_departments = 10; /* 最大科室数 */
+
+type
+PatientID = nat0;
+DoctorID = nat0;
+DepartmentID = nat0;
+TimeSlot = nat0;
+Queue = seq of PatientID;
+Registration = struct(patient_id: PatientID, doctor_id: DoctorID, department_id: DepartmentID, time_slot: TimeSlot);
+DailyStatistics = struct(total_patients: nat0, department_stats: map DepartmentID to nat0);
+
+var
+ext #patients: map PatientID to string; /* 患者信息 */
+ext #doctors: map DoctorID to map TimeSlot to bool; /* 医生的时间安排 */
+ext #registrations: seq of Registration; /* 挂号信息 */
+ext #queues: map DepartmentID to Queue; /* 每个科室的排队队列 */
+ext #daily_statistics: DailyStatistics; /* 每日统计数据 */
+
+inv
+forall[d: DoctorID] | len(filter(r in #registrations | r.doctor_id = d)) <= max_patients_per_doctor;
+/* 每位医生每天最多接待 max_patients_per_doctor 名患者 */
+
+forall[d: DepartmentID] | d in dom(#queues);
+/* 每个科室都应有一个排队队列 */
+
+behav CDFD_HRS;
+
+process Register_Patient(register: sign, patient_info: string)
+patient_id: PatientID
+ext wr patients
+comment
+注册新的患者并返回其患者ID
+end_process;
+
+process Update_Schedule(update: sign, doctor_id: DoctorID, schedule: map TimeSlot to bool)
+ext wr doctors
+comment
+更新医生排班信息
+end_process;
+
+process Perform_Registration(register: sign, patient_id: PatientID, doctor_id: DoctorID, department_id: DepartmentID, time_slot: TimeSlot)
+registration: Registration
+ext wr registrations
+rd doctors
+rd patients
+comment
+进行挂号操作并生成挂号信息
+end_process;
+
+process Manage_Queue(queue_control: sign, department_id: DepartmentID, registration: Registration)
+queue: Queue | status: String
+ext wr queues
+rd registrations
+comment
+根据挂号信息更新科室排队队列
+end_process;
+
+process Generate_Statistics(report: sign)
+statistics: DailyStatistics | report_status: String
+ext wr daily_statistics
+rd registrations
+rd queues
+comment
+生成每日挂号统计数据
+end_process;
+
+end_module;
+
+
+Module Manage_Patient_Registration_Decom / SYSTEM_HOSPITAL_REGISTRATION;
+/* Helper contract: Generate_Patient_ID(patients) returns a fresh PatientID notin dom(patients). */
+process Register_Patient(register: sign, patient_info: string)
+patient_id: PatientID
+ext wr patients
+post patient_id = Generate_Patient_ID(~patients)
+     and patient_id notin dom(~patients)
+     and patients(patient_id) = patient_info;
+comment 创建新的患者账户并存储患者信息
+end_process;
+end_module;
+
+
+Module Manage_Doctor_Schedule_Decom / SYSTEM_HOSPITAL_REGISTRATION;
+
+process Update_Schedule(update: sign, doctor_id: DoctorID, schedule: map TimeSlot to bool)
+ext wr doctors
+post if doctor_id notin dom(~doctors)
+     then doctors(doctor_id) = schedule
+     else doctors(doctor_id) = merge(~doctors(doctor_id), schedule);
+comment
+更新医生的排班时间表
+end_process;
+end_module;
+
+
+Module Manage_Registration_Decom / SYSTEM_HOSPITAL_REGISTRATION;
+process Perform_Registration(register: sign, patient_id: PatientID, doctor_id: DoctorID, department_id: DepartmentID, time_slot: TimeSlot)
+registration: Registration
+ext wr registrations
+rd doctors
+rd patients
+pre patient_id in dom(~patients)
+    and doctor_id in dom(~doctors)
+    and time_slot in dom(~doctors(doctor_id))
+    and ~doctors(doctor_id)(time_slot) = true;
+post registration = struct(patient_id, doctor_id, department_id, time_slot)
+     and registrations = conc(~registrations, [registration]);
+comment 处理挂号信息并将其添加到挂号记录中
+end_process;
+
+end_module;

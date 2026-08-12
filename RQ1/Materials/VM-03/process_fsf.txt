@@ -1,0 +1,7 @@
+quantity = 0 and total_cost >= 0
+&&
+record_appended = false and appended_item_name = SnackBar and appended_quantity = 0 and appended_total_cost = total_cost and appended_date = 2026-01-01
+||
+quantity >0 and total_cost >= 0
+&&
+record_appended = true and appended_item_name = SnackBar and appended_quantity = quantity and appended_total_cost = total_cost and appended_date = 2026-01-01

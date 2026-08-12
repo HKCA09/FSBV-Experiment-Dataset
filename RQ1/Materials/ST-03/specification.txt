@@ -1,0 +1,243 @@
+Module SYSTEM_STOCK_TRADING;
+
+Const
+max_daily_transactions = 1000; /* Maximum number of transactions per user per day */
+max_stock_holding = 1000; /* Maximum number of shares a user can hold per stock */
+min_balance = 0.0; /* Minimum allowable account balance */
+system_currency = "USD"; /* Default currency used in the system */
+trading_hours_start = 9:00; /* Start time of trading hours */
+trading_hours_end = 16:00; /* End time of trading hours */
+
+type
+UserID = nat0; /* Unique identifier for each user */
+StockName = string; /* Name of the stock */
+OrderType = {buy, sell}; /* Types of orders */
+Date = string; /* Date format */
+Time = string; /* Current-time representation */
+Quantity = nat0;
+RiskLevel = {low, medium, high}; /* Risk levels for users */
+Holdings = map StockName to Quantity;
+UserInf = struct(user_id: UserID, user_name: string, email: string);
+UserAccountInf = struct(user_id: UserID, user_name: string, email: string, balance: real, holdings: Holdings);
+StockInfo = struct(stock_name: StockName, current_price: real, historical_prices: seq of real);
+OrderInf = struct(order_id: nat0, buyer: UserID, seller: UserID, stock_name: StockName, quantity: Quantity, price: real, order_type: OrderType);
+
+var
+ext wr user_accounts: map UserID to UserAccountInf; /* All user accounts */
+ext wr stock_market: map StockName to StockInfo; /* Real-time stock market data */
+ext wr order_records: set of OrderInf; /* Records of all active orders */
+ext rd current_date: Date; /* Current system date */
+ext rd current_time: Time; /* Current system time */
+
+inv
+/* Balances may be negative so that Check_Account_Risk can detect overdrawn accounts. */
+
+forall[stock in stock_market.keys()] | stock_market[stock].current_price > 0.0;
+/* Ensure stock prices are always positive */
+
+forall[order in order_records] |
+  order.quantity > 0 And order.price > 0;
+/* All orders must have positive quantity and price */
+
+forall[order1, order2 in order_records] | order1.order_id <> order2.order_id;
+/* All orders must have unique identifiers */
+
+Behav CDFD_Stock_Trading;
+
+Process Manage_User_Registration(registration_request: sign)
+ext wr user_accounts
+End;
+
+Process Manage_Account(account_action: sign)
+ext wr user_accounts
+End;
+
+Process Query_Market(market_request: sign)
+ext rd stock_market
+End;
+
+Process Manage_Trading(trading_request: sign)
+ext wr order_records
+wr user_accounts
+End;
+
+Process Perform_Settlement(settlement_request: sign)
+ext wr user_accounts
+wr order_records
+End;
+
+Process Monitor_Risk(risk_check_request: sign)
+ext rd user_accounts
+End;
+
+end_module;
+
+
+Module Manage_User_Registration_Decom / SYSTEM_STOCK_TRADING;
+type
+NewUser = UserInf;
+VerificationCode = nat0;
+var
+ext wr user_accounts: map UserID to UserAccountInf;
+ext #verification_codes: map UserID to VerificationCode;
+
+process Register_New_User(user: NewUser, code: VerificationCode)
+pre
+  code matches "[0-9]{6}" And Not bound(user_accounts[user.user_id])
+post
+  user_accounts := user_accounts union {user.user_id -> {user_id: user.user_id, user_name: user.user_name, email: user.email, balance: 0.0, holdings: {}}};
+end_process;
+
+process Verify_Registration(user_id: UserID, code: VerificationCode)
+pre
+  bound(verification_codes[user_id]) And verification_codes[user_id] = code
+post
+  verification_codes := verification_codes \ {user_id -> code};
+end_process;
+
+process Resend_Verification_Code(user_id: UserID)
+pre
+  Not bound(user_accounts[user_id]) And bound(verification_codes[user_id])
+post
+  verification_codes[user_id] := RandomCode();
+end_process;
+
+end_module;
+
+
+Module Manage_Account_Decom / SYSTEM_STOCK_TRADING;
+type
+AccountAction = {view_balance, update_profile};
+var
+ext wr user_accounts: map UserID to UserAccountInf;
+
+process View_Balance(user_id: UserID)
+balance: real
+pre
+  bound(user_accounts[user_id])
+post
+  balance = user_accounts[user_id].balance;
+end_process;
+
+process Update_Profile(user_id: UserID, new_name: string, new_email: string)
+pre
+  bound(user_accounts[user_id])
+post
+  user_accounts[user_id].user_name := new_name;
+  user_accounts[user_id].email := new_email;
+end_process;
+
+process Update_Holdings(user_id: UserID, stock: StockName, quantity: Quantity)
+pre
+  bound(user_accounts[user_id]) And quantity >= 0
+post
+  user_accounts[user_id].holdings[stock] := quantity;
+end_process;
+
+end_module;
+
+
+Module Query_Market_Decom / SYSTEM_STOCK_TRADING;
+type
+MarketInfo = map StockName to StockInfo;
+var
+ext rd stock_market: MarketInfo;
+
+process Get_Stock_Price(stock: StockName)
+price: real
+pre
+  bound(stock_market[stock])
+post
+  price = stock_market[stock].current_price;
+end_process;
+
+process Get_Historical_Data(stock: StockName, days: nat)
+data: real
+pre
+  bound(stock_market[stock]) And days > 0
+post
+  data = stock_market[stock].historical_prices[:days];
+end_process;
+
+process Search_Stock(keyword: string)
+results: StockName
+pre
+  keyword <> ""
+post
+  results = {s | s in stock_market.keys() And s matches keyword};
+end_process;
+
+end_module;
+
+
+Module Manage_Trading_Decom / SYSTEM_STOCK_TRADING;
+type
+Order = OrderInf;
+var
+ext wr order_records: set of OrderInf;
+ext wr user_accounts: map UserID to UserAccountInf;
+
+process Place_Order(user_id: UserID, order: Order)
+pre
+  bound(user_accounts[user_id]) And order.quantity > 0 And order.price > 0
+post
+  order_records := order_records union {order};
+end_process;
+
+process Cancel_Order(user_id: UserID, order_id: nat)
+pre
+  bound(user_accounts[user_id]) And Exists(o in order_records | o.order_id = order_id)
+post
+  order_records := order_records \ {o | o.order_id = order_id};
+end_process;
+
+process Modify_Order(user_id: UserID, order_id: nat, new_quantity: Quantity, new_price: real)
+pre
+  bound(user_accounts[user_id]) And Exists(o in order_records | o.order_id = order_id)
+post
+  order_records := {o if o.order_id <> order_id else o with {quantity = new_quantity, price = new_price}};
+end_process;
+
+end_module;
+
+
+Module Perform_Settlement_Decom / SYSTEM_STOCK_TRADING;
+var
+ext wr user_accounts: map UserID to UserAccountInf;
+ext wr order_records: set of OrderInf;
+
+process Settle_Order(order: OrderInf)
+pre
+  Exists(o in order_records | o = order)
+post
+  user_accounts[order.buyer].balance := user_accounts[order.buyer].balance - (order.quantity * order.price);
+  user_accounts[order.buyer].holdings[order.stock_name] := user_accounts[order.buyer].holdings[order.stock_name] + order.quantity;
+  user_accounts[order.seller].balance := user_accounts[order.seller].balance + (order.quantity * order.price);
+  user_accounts[order.seller].holdings[order.stock_name] := user_accounts[order.seller].holdings[order.stock_name] - order.quantity;
+  order_records := order_records \ {order};
+end_process;
+
+end_module;
+
+
+Module Monitor_Risk_Decom / SYSTEM_STOCK_TRADING;
+type
+RiskAlert = string;
+var
+ext rd user_accounts: map UserID to UserAccountInf;
+
+process Check_Account_Risk(user_id: UserID)
+alert: RiskAlert
+pre
+  bound(user_accounts[user_id])
+post
+  if user_accounts[user_id].balance < 0 then
+    alert = "Overdrawn balance!";
+  else if user_accounts[user_id].holdings.size() > 100 then
+    alert = "Excessive stock holdings!";
+  else
+    alert = "No risk detected.";
+  end;
+end_process;
+
+end_module;

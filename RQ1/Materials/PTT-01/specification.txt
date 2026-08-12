@@ -1,0 +1,186 @@
+Module SYSTEM_PUBLIC_TRANSPORT_TICKETING;
+
+Const
+max_routes_per_station = 30; /* Maximum number of stations in a single route */
+max_ticket_discount = 50; /* Maximum discount percentage for tickets */
+min_balance = 100; /* Minimum balance required for ticket purchase */
+
+type
+UserID = nat0;
+RouteID = nat0;
+StationID = nat0;
+Money = real;
+TimeTable = map RouteID to seq of struct(departure: StationID, arrival: StationID, time: nat0);
+Route = struct(route_id: RouteID, stations: seq of StationID, distance: nat0);
+Ticket = struct(ticket_id: nat0, user_id: UserID, route_id: RouteID, qr_code: string, price: nat0, valid: bool);
+Discount = struct(percentage: nat0, conditions: string);
+PaymentMethod = {EWallet, CreditCard, DebitCard};
+
+var
+ext #users: map UserID to struct(name: string, balance: Money); /* User accounts */
+ext #routes: map RouteID to Route; /* Public transport routes */
+ext #timetables: TimeTable; /* Timetables for routes */
+ext #tickets: map nat0 to Ticket; /* Generated tickets */
+ext #discounts: seq of Discount; /* Applicable discount rules */
+
+inv
+forall[r: RouteID] | len(#routes(r).stations) <= max_routes_per_station;
+/* Each route must have no more than max_routes_per_station stations */
+
+forall[t: Ticket] | t.price >= 0;
+/* Ticket prices must be non-negative */
+
+forall[u: UserID] | #users(u).balance >= min_balance;
+/* Users must maintain a minimum balance */
+
+behav CDFD_PTT;
+
+process Register_User(registration: sign, user_info: string)
+user_id: UserID | confirmation: string
+ext wr users
+comment "Registers a user and assigns a unique user ID"
+end_process;
+
+process Query_Route(query: sign, departure: StationID, arrival: StationID)
+routes: seq of Route | message: string
+ext rd routes
+comment "Returns possible routes between the specified stations"
+end_process;
+
+process Purchase_Ticket(purchase: sign, user_id: UserID, route_id: RouteID, payment_method: PaymentMethod)
+ticket: Ticket | confirmation: string
+ext wr tickets
+wr users
+rd routes
+comment "Processes ticket purchase and deducts fare from user account"
+end_process;
+
+process Update_Route(update: sign, route_info: Route)
+status: bool | message: string
+ext wr routes
+comment "Updates or adds route information"
+end_process;
+
+end_module;
+
+
+Module Manage_User_Accounts_Decom / SYSTEM_PUBLIC_TRANSPORT_TICKETING;
+
+process Register_User(registration: sign, user_info: string)
+user_id: UserID | confirmation: string
+ext wr users
+post user_id notin dom(~users) and users(user_id) = struct(user_info, 1000);
+comment "Registers a new user with a default balance of 1000 units"
+end_process;
+
+process Update_Balance(update_balance: sign, user_id: UserID, amount: nat0)
+status: bool | message: string
+ext wr users
+post if user_id in dom(~users)
+     then users(user_id).balance = ~users(user_id).balance + amount and status = true and message = "Balance updated"
+     else status = false and message = "User not found";
+comment "Updates the user's balance for top-ups or refunds"
+end_process;
+
+process View_User_Details(view_details: sign, user_id: UserID)
+details: struct(name: string, balance: Money) | message: string
+ext rd users
+post if user_id in dom(~users)
+     then details = ~users(user_id)
+     else message = "User not found";
+comment "Retrieves user account details"
+end_process;
+
+end_module;
+
+Module Manage_Routes_and_Timetables_Decom / SYSTEM_PUBLIC_TRANSPORT_TICKETING;
+
+process Query_Route(query: sign, departure: StationID, arrival: StationID)
+routes: seq of Route | message: string
+ext rd routes
+post routes = filter(r in ~routes | (departure in r.stations) and (arrival in r.stations));
+comment "Finds routes between two stations"
+end_process;
+
+process Update_Route(update: sign, route_info: Route)
+status: bool | message: string
+ext wr routes
+post if route_info.route_id notin dom(~routes)
+     then routes(route_info.route_id) = route_info and status = true and message = "Route added"
+     else status = false and message = "Route already exists";
+comment "Adds or updates a route in the system"
+end_process;
+
+process Query_TimeTable(schedule_query: sign, route_id: RouteID)
+timetable: seq of struct(departure: StationID, arrival: StationID, time: nat0) | message: string
+ext rd timetables
+post timetable = ~timetables(route_id);
+comment "Returns the timetable for a given route"
+end_process;
+
+end_module;
+
+Module Manage_Ticket_Operations_Decom / SYSTEM_PUBLIC_TRANSPORT_TICKETING;
+/* Helper contract: Generate_Ticket_ID(tickets) returns a fresh ticket identifier notin dom(tickets). */
+
+process Purchase_Ticket(purchase: sign, user_id: UserID, route_id: RouteID, payment_method: PaymentMethod)
+ticket: Ticket | confirmation: string
+ext wr tickets
+wr users
+rd routes
+post if user_id in dom(~users)
+     and route_id in dom(~routes)
+     and ~users(user_id).balance - (~routes(route_id).distance * 10) >= min_balance
+     then let ticket_id = Generate_Ticket_ID(~tickets)
+          in ticket = struct(ticket_id, user_id, route_id, "QR123", ~routes(route_id).distance * 10, true)
+             and users(user_id).balance = ~users(user_id).balance - (~routes(route_id).distance * 10)
+             and tickets(ticket_id) = ticket
+     else users = ~users and tickets = ~tickets and confirmation = "Insufficient balance or invalid route";
+comment "Processes ticket purchase and stores ticket details"
+end_process;
+
+process Validate_Ticket(validate: sign, ticket_id: nat0)
+status: bool | message: string
+ext rd tickets
+post if ticket_id in dom(~tickets) and ~tickets(ticket_id).valid = true
+     then status = true and message = "Ticket is valid"
+     else status = false and message = "Ticket is invalid or expired";
+comment "Validates ticket for boarding"
+end_process;
+end_module;
+
+
+Module Manage_Payment_Decom / SYSTEM_PUBLIC_TRANSPORT_TICKETING;
+
+process Make_Payment(payment: sign, user_id: UserID, amount: Money, method: PaymentMethod)
+status: bool | receipt: string
+ext wr users
+post if user_id in dom(~users) and amount >= 0 and ~users(user_id).balance - amount >= min_balance
+     then users(user_id).balance = ~users(user_id).balance - amount
+             and status = true and receipt = "Payment successful"
+     else status = false and receipt = "Payment failed";
+comment "Processes payments using the specified method"
+end_process;
+
+end_module;
+
+
+Module Manage_System_Maintenance_Decom / SYSTEM_PUBLIC_TRANSPORT_TICKETING;
+
+process Update_Route(update: sign, route_info: Route)
+status: bool | message: string
+ext wr routes
+post if route_info.route_id notin dom(~routes)
+     then routes(route_info.route_id) = route_info and status = true and message = "Route added"
+     else status = false and message = "Route already exists";
+comment "Updates or adds new route information"
+end_process;
+
+process Update_Discounts(update_discount: sign, discount_info: Discount)
+status: bool | message: string
+ext wr discounts
+post discounts = conc(~discounts, [discount_info]) and status = true and message = "Discount added";
+comment "Updates the list of discounts"
+end_process;
+
+end_module;

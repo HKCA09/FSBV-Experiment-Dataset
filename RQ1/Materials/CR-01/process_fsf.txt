@@ -1,0 +1,19 @@
+old_course_count inset (1,2,4,7)
+&&
+student_resolved = true
+and course_resolved = true
+and old_course_count = old_course_count
+and new_course_count = old_course_count + 1
+and target_course_added = true
+and success = true
+and message = Course registered successfully.
+||
+old_course_count = 8
+&&
+student_resolved = true
+and course_resolved = true
+and old_course_count = 8
+and new_course_count = 8
+and target_course_added = false
+and success = false
+and message = Course limit exceeded.

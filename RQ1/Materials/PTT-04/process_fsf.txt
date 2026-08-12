@@ -1,0 +1,7 @@
+user_profile = 1001 and amount >= 0
+&&
+status = true and message = Balance updated and user_resolved = true and balance_delta = amount
+||
+user_profile = 0000 and amount >= 0
+&&
+status = false and message = User not found and user_resolved = false and balance_delta = 0

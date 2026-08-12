@@ -1,0 +1,7 @@
+user_id = 1001 and route_id = 501 
+&&
+ticket_written = true and ticket_valid = true and ticket_price = 120 and user_balance_delta = -120 and confirmation = none
+||
+user_id = 1001 and route_id = 999
+&&
+ticket_written = false and ticket_valid = false and ticket_price = 0 and user_balance_delta = 0 and confirmation = Insufficient balance or invalid route

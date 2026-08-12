@@ -1,0 +1,26 @@
+amount >= 0 and amount < 40
+&&
+status = true
+and receipt = Payment successful
+and resolved_user = true
+and old_balance = 140
+and new_balance = 140 - amount
+and balance_effect = debit
+||
+amount = 40
+&&
+status = true
+and receipt = Payment successful
+and resolved_user = true
+and old_balance = 140
+and new_balance = 100
+and balance_effect = debit
+||
+amount > 40
+&&
+status = false
+and receipt = Payment failed
+and resolved_user = true
+and old_balance = 140
+and new_balance = 140
+and balance_effect = unchanged

@@ -1,0 +1,7 @@
+card(course_catalog) > 0
+&&
+catalog_nonempty = true
+||
+card(course_catalog) = 0
+&&
+catalog_nonempty = false

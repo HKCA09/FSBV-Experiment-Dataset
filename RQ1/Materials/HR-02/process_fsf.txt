@@ -1,0 +1,7 @@
+doctor_profile = new_doctor
+&&
+schedule_inserted = true and schedule_merged = false and doctor_resolved = false
+||
+doctor_profile = existing_doctor
+&&
+schedule_inserted = false and schedule_merged = true and doctor_resolved = true

@@ -1,0 +1,134 @@
+Module SYSTEM_VENDING_MACHINE;
+Const
+max_item_capacity = 100;
+max_item_price = 500;
+min_balance_warning = 10;
+
+type
+Money = real;
+Date = string;
+Item = {Snack, Drink, Candy};
+ItemDetails = struct(item_name: string, price: Money, quantity: nat0);
+ItemCatalog = map Item to seq of ItemDetails;
+TransactionRecord = struct(item_name: string, quantity: nat0, total_cost: Money, date: Date);
+
+var
+ext #item_catalog: ItemCatalog;
+ext #transaction_history: seq of TransactionRecord;
+ext #current_balance: Money;
+ext #current_date: Date;
+
+inv
+forall[item: Item] | forall[details: ItemDetails] | (details in item_catalog(item)) => details.quantity <= max_item_capacity;
+forall[record: TransactionRecord] |
+    exists[item: Item, details: ItemDetails] |
+        details in item_catalog(item)
+        and details.item_name = record.item_name
+        and record.total_cost = record.quantity * details.price;
+
+behav CDFD_VM;
+
+process Manage_Item_Inventory(item_update: sign)
+ext wr item_catalog
+end_process;
+
+process Handle_User_Interaction(user_action: sign)
+ext rd item_catalog
+wr current_balance
+end_process;
+
+process Record_Transaction(transaction: sign)
+ext wr transaction_history
+end_process;
+
+process Monitor_System_Status(status_check: sign)
+ext rd item_catalog
+rd current_balance
+end_process;
+
+end_module;
+
+
+Module Manage_Item_Inventory_Decom / SYSTEM_VENDING_MACHINE;
+
+process Add_Item(item: Item, item_name: string, price: Money, quantity: nat0)
+ext wr item_catalog
+pre quantity > 0 & price <= max_item_price
+post item_catalog(item) = conc(~item_catalog(item), [mk_ItemDetails(item_name, price, quantity)])
+comment "Add a new item to the inventory."
+end_process;
+
+process Restock_Item(item: Item, item_name: string, quantity: nat0)
+ext wr item_catalog
+pre exists![details: seq of ItemDetails] (details.item_name = item_name & details.in item_catalog(item)) & quantity > 0
+post let updated_details = modify(details, quantity --> details.quantity + quantity) in
+item_catalog(item) = override(item_catalog(item), {item_name --> updated_details})
+comment "Restock an existing item."
+end_process;
+
+process Update_Item_Price(item: Item, item_name: string, new_price: Money)
+ext wr item_catalog
+pre exists![details: seq of ItemDetails] (details.item_name = item_name & details.in item_catalog(item)) & new_price <= max_item_price
+post let updated_details = modify(details, price --> new_price) in
+item_catalog(item) = override(item_catalog(item), {item_name --> updated_details})
+comment "Update the price of an existing item."
+end_process;
+
+end_module;
+
+Module Handle_User_Interaction_Decom / SYSTEM_VENDING_MACHINE;
+
+process Display_Items()
+ext rd item_catalog
+post true
+comment "Display all available items to the user."
+end_process;
+
+process Insert_Money(amount: Money)
+ext wr current_balance
+pre amount > 0
+post current_balance = ~current_balance + amount
+comment "User inserts money into the vending machine."
+end_process;
+
+process Select_Item(item: Item, item_name: string, quantity: nat0)
+ext rd item_catalog
+wr current_balance
+post if exists![details: seq of ItemDetails] (details.item_name = item_name & details.in item_catalog(item)) & quantity <= details.quantity & quantity * details.price <= current_balance
+then current_balance = ~current_balance - (quantity * details.price)
+comment "User selects an item, and the machine deducts the cost."
+end_process;
+
+end_module;
+
+Module Record_Transaction_Decom / SYSTEM_VENDING_MACHINE;
+
+process Add_Transaction(item_name: string, quantity: nat0, total_cost: Money)
+ext wr transaction_history
+post transaction_history = conc(~transaction_history, [mk_TransactionRecord(item_name, quantity, total_cost, current_date)])
+comment "Record a transaction into the transaction history."
+end_process;
+
+process Export_Transaction_History()
+ext rd transaction_history
+post true
+comment "Export transaction history for reporting purposes."
+end_process;
+
+end_module;
+
+Module Monitor_System_Status_Decom / SYSTEM_VENDING_MACHINE;
+
+process Check_Balance()
+ext rd current_balance
+post if current_balance < min_balance_warning then true
+comment "Check if the current balance is below the warning threshold."
+end_process;
+
+process Check_Inventory_Status()
+ext rd item_catalog
+post forall[item: Item] | forall[details: seq of ItemDetails] (details.in item_catalog(item)) => details.quantity > 0
+comment "Check if there are any items out of stock."
+end_process;
+
+end_module;

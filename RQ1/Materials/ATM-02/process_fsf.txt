@@ -1,0 +1,7 @@
+a_amount <= 30000
+&&
+application_written = true and application_status = written and withdraw_application_amount = a_amount and a_notice = Your application is successful and warning4 = none
+||
+a_amount = 30001
+&&
+application_written = false and application_status = unchanged and withdraw_application_amount = 0 and a_notice = none and warning4 = Your application amount is over the limit.

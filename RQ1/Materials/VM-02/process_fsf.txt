@@ -1,0 +1,6 @@
+amount > 0
+&&
+old_balance = 10.0
+and inserted_amount = amount
+and new_balance = 10.0 + amount
+and balance_effect = increase

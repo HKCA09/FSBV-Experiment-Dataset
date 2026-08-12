@@ -1,0 +1,7 @@
+deposit_amount <= 10000
+&&
+notice_emitted = true and balance_delta = deposit_amount and history_appended = true and warning1 = none
+||
+deposit_amount = 10001
+&&
+notice_emitted = false and balance_delta = 0 and history_appended = false and warning1 = Your amount is over 10000 yuan limit.

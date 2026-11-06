@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	account_profile	existing_account	0.00	NG: password_changed[exp=true, act=true] ? | s_notice1[exp=successful, act=none] ? | warning11[exp=none, act=none] ?	false

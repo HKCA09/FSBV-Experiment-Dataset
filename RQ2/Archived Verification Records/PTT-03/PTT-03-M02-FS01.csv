@@ -1,0 +1,5 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	amount	18.000	18.00	NG: status[exp=true, act=true] ? | receipt[exp=Payment successful, act=Payment failed] ? | resolved_user[exp=true, act=true] ? | old_balance[exp=140.0, act=140.0] ? | new_balance[exp=122.0, act=122.0] ? | balance_effect[exp=debit, act=debit] ?	false
+2	amount	22.400	22.40	NG: status[exp=true, act=true] ? | receipt[exp=Payment successful, act=Payment failed] ? | resolved_user[exp=true, act=true] ? | old_balance[exp=140.0, act=140.0] ? | new_balance[exp=117.6, act=117.6] ? | balance_effect[exp=debit, act=debit] ?	false
+3	amount	34.400	34.40	NG: status[exp=true, act=true] ? | receipt[exp=Payment successful, act=Payment failed] ? | resolved_user[exp=true, act=true] ? | old_balance[exp=140.0, act=140.0] ? | new_balance[exp=105.6, act=105.6] ? | balance_effect[exp=debit, act=debit] ?	false
+4	amount	5.600	5.60	NG: status[exp=true, act=true] ? | receipt[exp=Payment successful, act=Payment failed] ? | resolved_user[exp=true, act=true] ? | old_balance[exp=140.0, act=140.0] ? | new_balance[exp=134.4, act=134.4] ? | balance_effect[exp=debit, act=debit] ?	false

@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	old_course_count	1.000	0.00	NG: student_resolved[exp=true, act=true] ? | course_resolved[exp=true, act=true] ? | course_present[exp=true, act=true] ? | old_course_count[exp=1.0, act=1] ? | new_course_count[exp=1.0, act=0] ? | target_course_removed[exp=false, act=true] ? | status[exp=false, act=true] ? | message[exp=Minimum course limit reached., act=Course dropped successfully.] ?	false

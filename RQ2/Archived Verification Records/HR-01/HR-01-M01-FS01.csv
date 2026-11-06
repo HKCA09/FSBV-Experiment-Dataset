@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	patient_info	Alice_Profile	0.00	NG: patient_inserted[exp=true, act=true] ? | generated_patient_id_fresh[exp=true, act=true] ? | patient_id[exp=2001.0, act=2002] ?	false

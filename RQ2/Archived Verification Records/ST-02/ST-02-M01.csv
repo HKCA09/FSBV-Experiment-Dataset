@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	user_id	1001.000	0.00	NG: alert, expected=Overdrawn balance!, actual=No risk detected. ?	false

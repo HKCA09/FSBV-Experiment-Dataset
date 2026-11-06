@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	amount	40.000	0.00	NG: status[exp=true, act=false] ? | receipt[exp=Payment successful, act=Payment failed] ? | resolved_user[exp=true, act=true] ? | old_balance[exp=140.0, act=140.0] ? | new_balance[exp=100.0, act=140.0] ? | balance_effect[exp=debit, act=unchanged] ?	false

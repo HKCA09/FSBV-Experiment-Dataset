@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	ticket_profile	valid_ticket	0.00	NG: status[exp=true, act=true] ? | message[exp=Ticket is valid, act=Ticket is invalid or expired] ?	false

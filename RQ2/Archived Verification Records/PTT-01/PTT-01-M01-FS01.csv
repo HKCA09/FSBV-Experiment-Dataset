@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	route_profile	new_route	0.00	NG: route_written[exp=true, act=false] ? | status[exp=true, act=false] ? | message[exp=Route added, act=Route already exists] ?	false

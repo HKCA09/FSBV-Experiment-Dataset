@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	doctor_profile	existing_doctor	0.00	NG: schedule_inserted[exp=false, act=false] ? | schedule_merged[exp=true, act=false] ? | doctor_resolved[exp=true, act=true] ?	false

@@ -1,0 +1,10 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	deposit_amount	9993.570	6.43	OK: notice_emitted[exp=true, act=true] ? | balance_delta[exp=9993.57, act=9993.57] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	true
+2	deposit_amount	9981.900	18.10	OK: notice_emitted[exp=true, act=true] ? | balance_delta[exp=9981.9, act=9981.9] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	true
+3	deposit_amount	9991.990	8.01	OK: notice_emitted[exp=true, act=true] ? | balance_delta[exp=9991.99, act=9991.99] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	true
+4	deposit_amount	9951.290	48.71	OK: notice_emitted[exp=true, act=true] ? | balance_delta[exp=9951.29, act=9951.29] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	true
+5	deposit_amount	9987.840	12.16	OK: notice_emitted[exp=true, act=true] ? | balance_delta[exp=9987.84, act=9987.84] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	true
+6	deposit_amount	9962.830	37.17	OK: notice_emitted[exp=true, act=true] ? | balance_delta[exp=9962.83, act=9962.83] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	true
+7	deposit_amount	9964.650	35.35	OK: notice_emitted[exp=true, act=true] ? | balance_delta[exp=9964.65, act=9964.65] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	true
+8	deposit_amount	9991.640	8.36	OK: notice_emitted[exp=true, act=true] ? | balance_delta[exp=9991.64, act=9991.64] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	true
+9	deposit_amount	10000.000	0.00	NG: notice_emitted[exp=true, act=false] ? | balance_delta[exp=9992.41, act=9992.41] ? | history_appended[exp=true, act=true] ? | warning1[exp=none, act=none] ?	false

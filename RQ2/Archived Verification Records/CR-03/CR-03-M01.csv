@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	course_catalog	{}	0.00	NG: catalog_nonempty, expected=false, actual=true ? 	false

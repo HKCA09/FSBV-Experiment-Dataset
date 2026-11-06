@@ -1,0 +1,4 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	amount	33.300	33.30	NG: old_balance[exp=10.0, act=10.0] ? | inserted_amount[exp=33.3, act=33.3] ? | new_balance[exp=43.3, act=43.3] ? | balance_effect[exp=increase, act=decrease] ?	false
+2	amount	10.530	10.53	NG: old_balance[exp=10.0, act=10.0] ? | inserted_amount[exp=10.53, act=10.53] ? | new_balance[exp=20.53, act=20.53] ? | balance_effect[exp=increase, act=decrease] ?	false
+3	amount	126.580	126.58	NG: old_balance[exp=10.0, act=10.0] ? | inserted_amount[exp=126.58, act=126.58] ? | new_balance[exp=136.58, act=136.58] ? | balance_effect[exp=increase, act=decrease] ?	false

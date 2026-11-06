@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	(user_id , route_id)	(1001.000, 999.000)	0.0	NG: ticket_written[exp=false, act=true] ? | ticket_valid[exp=false, act=true] ? | ticket_price[exp=0.0, act=120] ? | user_balance_delta[exp=0.0, act=-120] ? | confirmation[exp=Insufficient balance or invalid route, act=none] ?	false

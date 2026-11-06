@@ -1,0 +1,4 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	(quantity , total_cost)	(45.520, 9.710)	(45.52, 9.71)	NG: record_appended[exp=true, act=false] ? | appended_item_name[exp=SnackBar, act=SnackBar] ? | appended_quantity[exp=45.52, act=45.52] ? | appended_total_cost[exp=9.71, act=9.71] ? | appended_date[exp=2026-01-01, act=2026-01-01] ?	false
+2	(quantity , total_cost)	(7.790, 38.250)	(7.79, 38.25)	NG: record_appended[exp=true, act=false] ? | appended_item_name[exp=SnackBar, act=SnackBar] ? | appended_quantity[exp=7.79, act=7.79] ? | appended_total_cost[exp=38.25, act=38.25] ? | appended_date[exp=2026-01-01, act=2026-01-01] ?	false
+3	(quantity , total_cost)	(2.650, 30.010)	(2.65, 30.01)	NG: record_appended[exp=true, act=false] ? | appended_item_name[exp=SnackBar, act=SnackBar] ? | appended_quantity[exp=2.65, act=2.65] ? | appended_total_cost[exp=30.01, act=30.01] ? | appended_date[exp=2026-01-01, act=2026-01-01] ?	false

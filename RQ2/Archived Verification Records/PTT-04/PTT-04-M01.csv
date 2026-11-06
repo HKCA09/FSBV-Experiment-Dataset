@@ -1,0 +1,3 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	(user_profile , amount)	(0.000, 30.980)	(0.00, 30.98)	NG: status[exp=false, act=true] ? | message[exp=User not found, act=Balance updated] ? | user_resolved[exp=false, act=true] ? | balance_delta[exp=0.0, act=30.98] ?	false
+2	(user_profile , amount)	(0.000, 48.030)	(0.00, 48.03)	NG: status[exp=false, act=true] ? | message[exp=User not found, act=Balance updated] ? | user_resolved[exp=false, act=true] ? | balance_delta[exp=0.0, act=48.03] ?	false

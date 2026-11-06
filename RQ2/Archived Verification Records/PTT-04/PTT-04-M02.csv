@@ -1,0 +1,2 @@
+No. 	 Variables 	 Values 	 Distance 	 Source 	 Evaluation
+1	(user_profile , amount)	(1001.000, 0.000)	0.0	OK: status[exp=true, act=true] ? | message[exp=Balance updated, act=Balance updated] ? | user_resolved[exp=true, act=true] ? | balance_delta[exp=0.0, act=0.0] ?	true

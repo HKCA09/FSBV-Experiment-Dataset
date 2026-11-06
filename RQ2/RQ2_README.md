@@ -2,7 +2,7 @@
 
 This directory contains the experimental records and supporting materials for **RQ2** of *An Automated Functional Scenario-Based Verification Approach to Support Program Maintenance*. RQ2 examines whether the proposed approach detects behavioral mismatches introduced by Java program mutations and associates detected mismatches with the relevant functional scenarios and observable program elements.
 
-The reported experiment covers **20 processes from six subject systems** and **59 approved mutants**. Of these, **57 mutants were detected**, corresponding to a **96.6% mutant-level detection rate**, with **188 mismatch observations**. The original experiment was conducted interactively using the tool's graphical user interface (GUI).
+The reported experiment covers **20 processes from six subject systems** and **59 approved mutants**. Of these, **57 mutants were detected**, corresponding to a **96.6% mutant-level detection rate**, with **180 mismatch observations**. The original experiment was conducted interactively using the tool's graphical user interface (GUI).
 
 ## 1. Files and Their Roles
 

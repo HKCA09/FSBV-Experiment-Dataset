@@ -1,0 +1,203 @@
+{
+  "model": "Task-level Bayesian logistic GLMM; participant, case, review random intercept",
+  "input": "/mnt/data/RQ3_experiment_analysis(2).xlsx",
+  "fixed_effect_prior_sd": 1.5,
+  "intercept_prior_sd": 2.0,
+  "random_effect_sd_halfnormal_prior_scale": 1.0,
+  "warmup_iterations_per_chain": 3500,
+  "posterior_draws_per_chain": 7000,
+  "chains": 4,
+  "thin": 1,
+  "random_seed": 20261108,
+  "elapsed_seconds": 8.890430446999972,
+  "data": {
+    "n_reviews": 40,
+    "n_task_observations": 160,
+    "correct_baseline": 67,
+    "correct_assisted": 78
+  },
+  "posterior_adjusted_score": {
+    "baseline_median": 3.359399804747567,
+    "assisted_median": 3.8323651076912606,
+    "difference_median": 0.46291401066016236,
+    "difference_mean": 0.4714360808219263,
+    "difference_95CrI": [
+      0.14506573913977736,
+      0.8485639422492137
+    ],
+    "Pr_difference_positive": 0.9968571428571429
+  },
+  "conditional_log_odds": {
+    "coefficient_median": 2.1022618507125914,
+    "coefficient_95CrI": [
+      0.703488960568601,
+      3.639551849303277
+    ],
+    "OR_median": 8.184661474504326,
+    "OR_95CrI": [
+      2.0207908935968977,
+      38.074769671328916
+    ]
+  },
+  "diagnostics": [
+    {
+      "parameter": "Intercept",
+      "posterior_mean": 2.0163865880808998,
+      "posterior_median": 1.986744308699949,
+      "95% CrI lower": 0.6458993532887256,
+      "95% CrI upper": 3.580258544975608,
+      "rank-split-Rhat": 1.0039613059202772,
+      "bulk_ESS": 881.6288763812921,
+      "tail_ESS": 1680.3123462854312
+    },
+    {
+      "parameter": "Condition",
+      "posterior_mean": 2.1304219139967806,
+      "posterior_median": 2.1022618507125914,
+      "95% CrI lower": 0.703488960568601,
+      "95% CrI upper": 3.639551849303277,
+      "rank-split-Rhat": 1.0046280140083788,
+      "bulk_ESS": 975.3001007733918,
+      "tail_ESS": 1902.0456996201754
+    },
+    {
+      "parameter": "Period",
+      "posterior_mean": 0.6130149202321057,
+      "posterior_median": 0.5835457357699871,
+      "95% CrI lower": -0.8500323946653124,
+      "95% CrI upper": 2.2241139513914163,
+      "rank-split-Rhat": 1.0051311944074277,
+      "bulk_ESS": 852.9061084055093,
+      "tail_ESS": 1518.515667910045
+    },
+    {
+      "parameter": "Sequence",
+      "posterior_mean": -0.6313085276118116,
+      "posterior_median": -0.6250597306099348,
+      "95% CrI lower": -2.2699841935242118,
+      "95% CrI upper": 0.9542501775620406,
+      "rank-split-Rhat": 1.0046543588778862,
+      "bulk_ESS": 643.1732279800113,
+      "tail_ESS": 1100.477863239157
+    },
+    {
+      "parameter": "Task2",
+      "posterior_mean": 2.1894568960658862,
+      "posterior_median": 2.1422658020026626,
+      "95% CrI lower": 0.40463522305917127,
+      "95% CrI upper": 4.32695723285957,
+      "rank-split-Rhat": 1.006794604510567,
+      "bulk_ESS": 726.1793520603619,
+      "tail_ESS": 1175.9656035494677
+    },
+    {
+      "parameter": "Task3",
+      "posterior_mean": 0.9277280199636538,
+      "posterior_median": 0.9014011604426969,
+      "95% CrI lower": -0.5472310509711237,
+      "95% CrI upper": 2.5742619002886133,
+      "rank-split-Rhat": 1.0033241592560371,
+      "bulk_ESS": 936.9749301193046,
+      "tail_ESS": 1623.6040439091773
+    },
+    {
+      "parameter": "Task4",
+      "posterior_mean": -0.817574508044528,
+      "posterior_median": -0.8147568125652032,
+      "95% CrI lower": -2.1216982380179923,
+      "95% CrI upper": 0.38958047586826233,
+      "rank-split-Rhat": 1.002082907595414,
+      "bulk_ESS": 1317.3073515070457,
+      "tail_ESS": 2538.040441817618
+    },
+    {
+      "parameter": "SD_Participant",
+      "posterior_mean": 0.5202277291616021,
+      "posterior_median": 0.4445504012226267,
+      "95% CrI lower": 0.026053645344723785,
+      "95% CrI upper": 1.487197095447795,
+      "rank-split-Rhat": 1.0008231924104993,
+      "bulk_ESS": 1264.5970939381134,
+      "tail_ESS": 1836.9413283802323
+    },
+    {
+      "parameter": "SD_Case",
+      "posterior_mean": 0.7528661426938873,
+      "posterior_median": 0.6933386021810717,
+      "95% CrI lower": 0.035134501980802334,
+      "95% CrI upper": 1.8833254147947334,
+      "rank-split-Rhat": 1.0027766351297718,
+      "bulk_ESS": 713.5663683875936,
+      "tail_ESS": 1473.693116095686
+    },
+    {
+      "parameter": "SD_Review",
+      "posterior_mean": 0.7364989184619494,
+      "posterior_median": 0.6499079804311819,
+      "95% CrI lower": 0.03924418560097813,
+      "95% CrI upper": 1.967238610021355,
+      "rank-split-Rhat": 1.0030979731311809,
+      "bulk_ESS": 508.6402842013689,
+      "tail_ESS": 669.2750586290398
+    }
+  ],
+  "chain_info": [
+    {
+      "chain": 1,
+      "mean_EES_likelihood_evaluations_per_block": [
+        5.661714285714286,
+        2.4964761904761903,
+        3.0846666666666667,
+        3.053238095238095
+      ],
+      "proposal_scales_at_warmup_end": [
+        1.2,
+        1.2,
+        1.2
+      ]
+    },
+    {
+      "chain": 2,
+      "mean_EES_likelihood_evaluations_per_block": [
+        5.65352380952381,
+        2.4976190476190476,
+        3.275047619047619,
+        3.0004761904761903
+      ],
+      "proposal_scales_at_warmup_end": [
+        1.2,
+        1.180952784066342,
+        1.2
+      ]
+    },
+    {
+      "chain": 3,
+      "mean_EES_likelihood_evaluations_per_block": [
+        5.638190476190476,
+        2.448,
+        3.1804761904761905,
+        3.123904761904762
+      ],
+      "proposal_scales_at_warmup_end": [
+        1.2,
+        1.2,
+        1.2
+      ]
+    },
+    {
+      "chain": 4,
+      "mean_EES_likelihood_evaluations_per_block": [
+        5.647523809523809,
+        2.5486666666666666,
+        3.234,
+        3.088285714285714
+      ],
+      "proposal_scales_at_warmup_end": [
+        1.2,
+        1.2,
+        1.2
+      ]
+    }
+  ],
+  "limitations": "Normal random-intercept and conditional-independent Bernoulli assumptions; three random-effect SDs weakly identifiable at n=40 reviews; task2 had no errors; posterior intervals dependent on regularizing priors."
+}

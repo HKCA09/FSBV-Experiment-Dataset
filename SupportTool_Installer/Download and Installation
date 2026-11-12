@@ -1,0 +1,12 @@
+## Download and Installation
+
+The executable version of the FSF Verification Tool is distributed as a Windows installer through GitHub Releases.
+
+1. Open the **Releases** section of this repository.
+2. Download the latest available Windows installer (`.exe`) from the release assets.
+3. Run the installer and follow the installation instructions.
+4. Launch the FSF Verification Tool after installation.
+
+The installer includes the required Java runtime environment, so a separate Java installation is not required for normal use of the packaged application.
+
+For instructions on loading SOFL specifications, generating test cases, executing Java programs, and inspecting verification results, see the **Quick Start** section below.

@@ -1,0 +1,101 @@
+﻿participant_id,order_group,metric,baseline_case_id,traceability_assisted_case_id,baseline_value,traceability_assisted_value,signed_difference_favoring_assisted
+P01,Baseline-first,Total accuracy,C12,C05,4.0,4.0,0.0
+P02,Baseline-first,Total accuracy,C13,C01,3.0,4.0,1.0
+P03,Baseline-first,Total accuracy,C20,C09,2.0,4.0,2.0
+P04,Baseline-first,Total accuracy,C01,C08,4.0,4.0,0.0
+P05,Baseline-first,Total accuracy,C02,C16,4.0,4.0,0.0
+P06,Baseline-first,Total accuracy,C04,C13,3.0,4.0,1.0
+P07,Traceability-first,Total accuracy,C05,C07,3.0,4.0,1.0
+P08,Baseline-first,Total accuracy,C16,C02,4.0,4.0,0.0
+P09,Traceability-first,Total accuracy,C03,C15,4.0,4.0,0.0
+P10,Traceability-first,Total accuracy,C19,C03,4.0,4.0,0.0
+P11,Baseline-first,Total accuracy,C15,C14,4.0,4.0,0.0
+P12,Baseline-first,Total accuracy,C07,C18,3.0,4.0,1.0
+P13,Traceability-first,Total accuracy,C10,C20,2.0,4.0,2.0
+P14,Traceability-first,Total accuracy,C18,C11,2.0,4.0,2.0
+P15,Traceability-first,Total accuracy,C11,C04,4.0,3.0,-1.0
+P16,Traceability-first,Total accuracy,C08,C12,4.0,4.0,0.0
+P17,Traceability-first,Total accuracy,C14,C06,4.0,3.0,-1.0
+P18,Traceability-first,Total accuracy,C09,C19,2.0,4.0,2.0
+P19,Baseline-first,Total accuracy,C06,C17,3.0,4.0,1.0
+P20,Traceability-first,Total accuracy,C17,C10,4.0,4.0,0.0
+P01,Baseline-first,Completion time (s),C12,C05,55.0,100.0,-45.0
+P02,Baseline-first,Completion time (s),C13,C01,165.0,45.0,120.0
+P03,Baseline-first,Completion time (s),C20,C09,45.0,80.0,-35.0
+P04,Baseline-first,Completion time (s),C01,C08,65.0,55.0,10.0
+P05,Baseline-first,Completion time (s),C02,C16,120.0,35.0,85.0
+P06,Baseline-first,Completion time (s),C04,C13,150.0,110.0,40.0
+P07,Traceability-first,Completion time (s),C05,C07,180.0,70.0,110.0
+P08,Baseline-first,Completion time (s),C16,C02,55.0,70.0,-15.0
+P09,Traceability-first,Completion time (s),C03,C15,45.0,20.0,25.0
+P10,Traceability-first,Completion time (s),C19,C03,50.0,35.0,15.0
+P11,Baseline-first,Completion time (s),C15,C14,30.0,50.0,-20.0
+P12,Baseline-first,Completion time (s),C07,C18,125.0,85.0,40.0
+P13,Traceability-first,Completion time (s),C10,C20,150.0,30.0,120.0
+P14,Traceability-first,Completion time (s),C18,C11,140.0,30.0,110.0
+P15,Traceability-first,Completion time (s),C11,C04,50.0,60.0,-10.0
+P16,Traceability-first,Completion time (s),C08,C12,90.0,20.0,70.0
+P17,Traceability-first,Completion time (s),C14,C06,120.0,105.0,15.0
+P18,Traceability-first,Completion time (s),C09,C19,130.0,30.0,100.0
+P19,Baseline-first,Completion time (s),C06,C17,160.0,75.0,85.0
+P20,Traceability-first,Completion time (s),C17,C10,100.0,90.0,10.0
+P01,Baseline-first,Analysability,C12,C05,4.0,4.0,0.0
+P02,Baseline-first,Analysability,C13,C01,3.0,4.0,1.0
+P03,Baseline-first,Analysability,C20,C09,3.0,4.0,1.0
+P04,Baseline-first,Analysability,C01,C08,4.0,5.0,1.0
+P05,Baseline-first,Analysability,C02,C16,3.0,4.0,1.0
+P06,Baseline-first,Analysability,C04,C13,4.0,4.0,0.0
+P07,Traceability-first,Analysability,C05,C07,4.0,5.0,1.0
+P08,Baseline-first,Analysability,C16,C02,4.0,4.0,0.0
+P09,Traceability-first,Analysability,C03,C15,4.0,4.0,0.0
+P10,Traceability-first,Analysability,C19,C03,3.0,4.0,1.0
+P11,Baseline-first,Analysability,C15,C14,3.0,4.0,1.0
+P12,Baseline-first,Analysability,C07,C18,3.0,4.0,1.0
+P13,Traceability-first,Analysability,C10,C20,4.0,5.0,1.0
+P14,Traceability-first,Analysability,C18,C11,3.0,5.0,2.0
+P15,Traceability-first,Analysability,C11,C04,4.0,4.0,0.0
+P16,Traceability-first,Analysability,C08,C12,3.0,4.0,1.0
+P17,Traceability-first,Analysability,C14,C06,4.0,3.0,-1.0
+P18,Traceability-first,Analysability,C09,C19,4.0,4.0,0.0
+P19,Baseline-first,Analysability,C06,C17,4.0,5.0,1.0
+P20,Traceability-first,Analysability,C17,C10,3.0,4.0,1.0
+P01,Baseline-first,Modifiability,C12,C05,4.0,3.0,-1.0
+P02,Baseline-first,Modifiability,C13,C01,3.0,4.0,1.0
+P03,Baseline-first,Modifiability,C20,C09,4.0,5.0,1.0
+P04,Baseline-first,Modifiability,C01,C08,3.0,5.0,2.0
+P05,Baseline-first,Modifiability,C02,C16,4.0,4.0,0.0
+P06,Baseline-first,Modifiability,C04,C13,3.0,4.0,1.0
+P07,Traceability-first,Modifiability,C05,C07,4.0,5.0,1.0
+P08,Baseline-first,Modifiability,C16,C02,3.0,4.0,1.0
+P09,Traceability-first,Modifiability,C03,C15,4.0,4.0,0.0
+P10,Traceability-first,Modifiability,C19,C03,3.0,5.0,2.0
+P11,Baseline-first,Modifiability,C15,C14,4.0,4.0,0.0
+P12,Baseline-first,Modifiability,C07,C18,3.0,4.0,1.0
+P13,Traceability-first,Modifiability,C10,C20,4.0,5.0,1.0
+P14,Traceability-first,Modifiability,C18,C11,3.0,4.0,1.0
+P15,Traceability-first,Modifiability,C11,C04,3.0,4.0,1.0
+P16,Traceability-first,Modifiability,C08,C12,3.0,4.0,1.0
+P17,Traceability-first,Modifiability,C14,C06,3.0,4.0,1.0
+P18,Traceability-first,Modifiability,C09,C19,4.0,4.0,0.0
+P19,Baseline-first,Modifiability,C06,C17,4.0,5.0,1.0
+P20,Traceability-first,Modifiability,C17,C10,3.0,5.0,2.0
+P01,Baseline-first,Testability,C12,C05,3.0,5.0,2.0
+P02,Baseline-first,Testability,C13,C01,3.0,4.0,1.0
+P03,Baseline-first,Testability,C20,C09,4.0,5.0,1.0
+P04,Baseline-first,Testability,C01,C08,4.0,5.0,1.0
+P05,Baseline-first,Testability,C02,C16,4.0,4.0,0.0
+P06,Baseline-first,Testability,C04,C13,4.0,4.0,0.0
+P07,Traceability-first,Testability,C05,C07,5.0,5.0,0.0
+P08,Baseline-first,Testability,C16,C02,4.0,4.0,0.0
+P09,Traceability-first,Testability,C03,C15,3.0,5.0,2.0
+P10,Traceability-first,Testability,C19,C03,3.0,5.0,2.0
+P11,Baseline-first,Testability,C15,C14,4.0,4.0,0.0
+P12,Baseline-first,Testability,C07,C18,4.0,5.0,1.0
+P13,Traceability-first,Testability,C10,C20,3.0,5.0,2.0
+P14,Traceability-first,Testability,C18,C11,4.0,5.0,1.0
+P15,Traceability-first,Testability,C11,C04,3.0,4.0,1.0
+P16,Traceability-first,Testability,C08,C12,3.0,4.0,1.0
+P17,Traceability-first,Testability,C14,C06,4.0,4.0,0.0
+P18,Traceability-first,Testability,C09,C19,4.0,4.0,0.0
+P19,Baseline-first,Testability,C06,C17,5.0,5.0,0.0
+P20,Traceability-first,Testability,C17,C10,3.0,4.0,1.0

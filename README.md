@@ -16,6 +16,7 @@ The `RQ1/` directory contains:
 
 - **`Materials/`** — Supporting experimental materials for RQ1.
 - **`RQ1_experiment_data.xlsx`** — Recorded experimental data for the operational feasibility evaluation.
+- **`RQ1_INSTRUCTIONS.md`** — Step-by-step instructions for running the verification tool, reproducing the RQ1 workflow, and checking the reported operational results.
 
 ### RQ2 — Mismatch Detection and Localization
 
@@ -26,6 +27,7 @@ The `RQ2/` directory contains:
 - **`RQ2_README.md`** — Additional documentation describing the RQ2 materials and their usage.
 - **`rq2_experiment_data.xlsx`** — Experimental data and recorded mismatch detection and localization results.
 - **`theorem_RQ2_History.txt`** — An auxiliary file used solely for viewing archived RQ2 verification records.
+- **`RQ2_INSTRUCTIONS.md`** — Instructions for examining the fixed test suites, reviewing mutation results, inspecting archived verification records, and understanding the scope of experimental reproducibility.
 
 ### RQ3 — Maintenance-Oriented Reporting
 
@@ -37,6 +39,7 @@ The `RQ3/` directory contains:
 - **`RQ3_Wilcoxon_Analysis_Package/`** — Materials for paired Wilcoxon signed-rank analyses.
 - **`RQ3_experiment_analysis.xlsx`** — Experimental data and analysis records for RQ3.
 - **`RQ3_questionnaire_template.docx`** — Questionnaire template used in the participant evaluation.
+- **`RQ3_INSTRUCTIONS.md`** — Instructions for reproducing the statistical analyses, checking the reported results, and understanding the experimental design and reproducibility scope.
 
 ---
 
